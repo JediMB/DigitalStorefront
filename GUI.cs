@@ -7,7 +7,7 @@ namespace ConsoleGUI
 {
     [SupportedOSPlatform("windows")]
 
-    public static class GUI
+    public static partial class GUI
     {
         private static readonly int _guiWidth = 128;
         private static readonly int _guiHeight = 48;
