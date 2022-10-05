@@ -1,4 +1,5 @@
 ﻿using System.Reflection.Metadata.Ecma335;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace ConsoleGUI
 {
@@ -32,7 +33,7 @@ namespace ConsoleGUI
             public TextBox(int left, int top, int width, int height, string text = "")
             {
                 this.left = left;
-                this.top = top+1;
+                this.top = top;
                 this.width = width;
                 this.height = height;
 
@@ -57,94 +58,75 @@ namespace ConsoleGUI
                     }
 
                 }
+                
+                Queue<string> lines = new();
+
+                while (text != string.Empty)                         // Split the text into lines that fit into the textbox
+                    SplitText(lines, text, out text, width);
                                 
-                if (text.Length > width)
+                return lines.ToArray();
+            }
+
+            private static void SplitText(Queue<string> lines, string textIn, out string textOut, int maxLength)
+            {
+                for (int i = 0; i <= maxLength && i < textIn.Length; i++)
                 {
-                    Queue<string> lines = new();
-
-                    while (text.Length > width)
+                    if (textIn[i] == '\n' || textIn[i] == '\r')             // If there's already a linebreak on the current row, split the string there
                     {
-                        bool foundLinebreak = false;
+                        if (textIn[i] == '\r' && textIn[i + 1] == '\n')     // If carriage return followed by newline, remove the latter
+                            textIn = textIn.Remove(i + 1, 1);
 
-                        for (int i = 0; i < width; i++)     // If there's already a linebreak in the string, split the string there...
+                        string line = textIn[..i];                          // Create the new line of text
+                        textIn = textIn[(i + 1)..];                         // Remove that line from the full text
+
+                        for (int j = line.Length; j < maxLength; j++)       // Fill out the string with a trail of blankspaces
                         {
-                            if (text[i] == '\n' || text[i] == '\r')
-                            {
-                                if (text[i] == '\r' && text[i + 1] == '\n')
-                                    text = text.Remove(i+1, 1);
-
-                                foundLinebreak = true;
-                                string line = text[..i];
-                                
-                                for (int j = line.Length; j < width; j++)
-                                {
-                                    line += " ";
-                                }
-                                
-                                lines.Enqueue(line);
-                                text = text[(i + 1)..];
-                                break;
-                            }
+                            line += " ";
                         }
 
-                        if (!foundLinebreak)                // ...but if not, split at the last possible blankspace
+                        lines.Enqueue(line);                                // Put the line in the queue
+                        
+                        if (textIn.Length > maxLength)                      // If there is more than one more line of text, start over...
                         {
-                            for (int i = width - 1; i >= 0; i--)
-                            {
-                                if (text[i] == ' ')
-                                {
-                                    string line = text[..i];
-
-                                    for (int j = line.Length; j < width; j++)
-                                    {
-                                        line += " ";
-                                    }
-
-                                    lines.Enqueue(line);
-                                    text = text[(i + 1)..];
-                                    break;
-                                }
-                            }
+                            textOut = textIn;
+                            return;
                         }
+
+                        i = 0;                                              // ...and if there isn't, restart the for-loop to look for more linebreaks
                     }
+                }
 
-                    for (int i = 0; i < text.Length; i++)   // Checks the final length of text for linebreaks
-                    {                                       // TODO: Figure out if there's a simpler way to do all of these things
-                        if (text[i] == '\n' || text[i] == '\r')
+                // If the remaining text is longer than the textbox and doesn't have any linebreaks, split the string at a blankspace
+                if (textIn.Length > maxLength)
+                {
+                    for (int i = maxLength; i >= 0; i--)
+                    {
+                        if (textIn[i] == ' ')
                         {
-                            if (text[i] == '\r' && text[i + 1] == '\n')
-                                text = text.Remove(i + 1, 1);
+                            string line = textIn[..i];
 
-                            string line = text[..i];
-
-                            for (int j = line.Length; j < width; j++)
+                            for (int j = line.Length; j < maxLength; j++)
                             {
                                 line += " ";
                             }
 
                             lines.Enqueue(line);
-                            text = text[(i + 1)..];
-                            i = 0;
+                            textOut = textIn[(i + 1)..];
+                            return;
                         }
                     }
-
-                    for (int i = text.Length; i < width; i++)
-                    {
-                        text += " ";
-                    }
-
-                    lines.Enqueue(text);
-
-                    return lines.ToArray();
                 }
 
-                return new string[1] { text };
+                // If the remaining text is shorter than the textbox width and doesn't contain any more linebreak characters...
+                for (int i = textIn.Length; i < maxLength; i++)           
+                {
+                    textIn += " ";      // ...fill out the final line/row with blankspaces to match the box width...
+                }
+
+                lines.Enqueue(textIn);  // ...and add it to the queue
+
+                textOut = string.Empty;
             }
-
-            //private static string SplitLine()
-            //{
-
-            //}
 
             public void ScrollUp(/*byte rows = 1*/)
             {
@@ -187,27 +169,78 @@ namespace ConsoleGUI
 
         public static void CreateTextbox(int left, int top, int width, int height, string text = "")
         {
-            TextBox textBox = new(left, top, width, height, text);
+            if (textBoxes.Count < byte.MaxValue)
+            {
+                try
+                {
+                    // Throw an exception if a parameter value would lead to drawing outside the console buffer...
+                    if (left < 0 || left > GetGUIWidth) throw new ArgumentOutOfRangeException(nameof(left), "Origin point is beyond horizontal buffer bounds.");
+                    if (top < 0 || top > GetGUIHeight) throw new ArgumentOutOfRangeException(nameof(top), "Origin point is beyond vertical buffer bounds.");
+                    if (left + width > GetGUIWidth) throw new ArgumentOutOfRangeException(nameof(left) + "', '" + nameof(width), "Too wide.");
+                    if (top + height > GetGUIHeight) throw new ArgumentOutOfRangeException(nameof(top) + "', '" + nameof(height), "Too tall.");
 
-            textBox.Render();
+                    top++;  // Push GUI down from row 0
 
-            textBoxes.Add(textBox);
+                    TextBox textBox = new(left, top, width, height, text);
+
+                    textBox.Render();
+
+                    textBoxes.Add(textBox);
+                }
+                catch (ArgumentOutOfRangeException ex)
+                {
+                    PrintError("GUI.CreateTextbox error: " + ex.Message);
+                }
+            }
+        }
+
+        private static void PrevTextbox()
+        {
+            if (textBoxes.Count != 0)
+            {
+                textBoxSelection--;
+
+                if (textBoxSelection == byte.MaxValue)
+                    textBoxSelection = (byte)(textBoxes.Count - 1);
+            }
+        }
+
+        private static void NextTextbox()
+        {
+            if (textBoxes.Count != 0)
+            {
+                textBoxSelection++;
+
+                if (textBoxSelection >= textBoxes.Count)
+                    textBoxSelection = 0;
+            }
         }
 
         public static void ControlTextboxes()
         {
-            ConsoleKey key;
+            ConsoleKeyInfo keyInfo;
 
-            while ((key = Console.ReadKey(true).Key) != ConsoleKey.Q)
+            while ((keyInfo = Console.ReadKey(true)).Key != ConsoleKey.Q)
             {
-                switch (key)
+                switch (keyInfo.Key)
                 {
+                    case ConsoleKey.Tab:
+                        if ((keyInfo.Modifiers & ConsoleModifiers.Shift) != 0)
+                        {
+                            PrevTextbox();
+                            break;
+                        }
+                        NextTextbox();
+                        break;
+
                     case ConsoleKey.UpArrow:
-                        textBoxes[textBoxSelection].ScrollUp();
+                        if (textBoxes.Count > 0)
+                            textBoxes[textBoxSelection].ScrollUp();
                         break;
 
                     case ConsoleKey.DownArrow:
-                        textBoxes[textBoxSelection].ScrollDown();
+                        if (textBoxes.Count > 0)
+                            textBoxes[textBoxSelection].ScrollDown();
                         break;
                 }
             }
