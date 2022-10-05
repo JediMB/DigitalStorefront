@@ -78,7 +78,7 @@ namespace ConsoleGUI
         }
 
         [DllImport("user32.dll")]
-        public static extern int DeleteMenu(IntPtr hMenu, int nPosition, int wFlags);
+        private static extern int DeleteMenu(IntPtr hMenu, int nPosition, int wFlags);
         [DllImport("user32.dll")]
         private static extern IntPtr GetSystemMenu(IntPtr hWnd, bool pRevert);
         [DllImport("kernel32.dll", ExactSpelling = true)]
