@@ -109,19 +109,19 @@ namespace ConsoleGUI
         {
             try
             {
+                // Throw an exception if a parameter value would lead to drawing outside the console buffer...
+                if (startX < 0 || startX > GetGUIWidth) throw new ArgumentOutOfRangeException(nameof(startX), "Origin point is beyond buffer bounds.");
+                if (y < 0 || y > GetGUIHeight) throw new ArgumentOutOfRangeException(nameof(y), "Y position is beyond buffer bounds.");
+                if (startX + width > GetGUIWidth) throw new ArgumentOutOfRangeException(nameof(startX) + "', '" + nameof(width), "Too long.");
+                // ...or if the specified size is too small for the element to be drawn properly
+                if (width < 3) throw new ArgumentOutOfRangeException(nameof(width), "Length can't be less than 3 (<3).");
+
+                y++; // Push GUI down from line 0
+
                 if (bgColor != null)
                     Console.BackgroundColor = bgColor.Value;
                 if (textColor != null)
                     Console.ForegroundColor = textColor.Value;
-
-                y++; // Push GUI down from line 0
-
-                // Throw an exception if a parameter value would lead to drawing outside the console buffer...
-                if (startX < 0 || startX > Console.BufferWidth) throw new ArgumentOutOfRangeException(nameof(startX), "Origin point is beyond buffer bounds.");
-                if (y < 0 || y > Console.BufferHeight) throw new ArgumentOutOfRangeException(nameof(y), "Y position is beyond buffer bounds.");
-                if (startX + width > Console.BufferWidth) throw new ArgumentOutOfRangeException(nameof(startX) + "', '" + nameof(width), "Too long.");
-                // ...or if the specified size is too small for the element to be drawn properly
-                if (width < 3) throw new ArgumentOutOfRangeException(nameof(width), "Length can't be less than 3 (<3).");
 
                 CharAtPosition(_cornerTL[(int)borderStyle + (int)edgeStyleLeft], startX, y);
                 for (int i = startX + 1; i < startX + width - 1; i++)
@@ -145,19 +145,19 @@ namespace ConsoleGUI
         {
             try
             {
+                // Throw an exception if a parameter value would lead to drawing outside the console buffer...
+                if (startY < 0 || startY > GetGUIHeight) throw new ArgumentOutOfRangeException(nameof(startY), "Origin point is beyond buffer bounds.");
+                if (x < 0 || x > GetGUIWidth) throw new ArgumentOutOfRangeException(nameof(x), "X position is beyond buffer bounds.");
+                if (startY + height > GetGUIHeight) throw new ArgumentOutOfRangeException(nameof(startY) + "', '" + nameof(height), "Too long.");
+                // ...or if the specified size is too small for the element to be drawn properly
+                if (height < 3) throw new ArgumentOutOfRangeException(nameof(height), "Length can't be less than 3 (<3).");
+
+                startY++; // Push GUI down from line 0
+
                 if (bgColor != null)
                     Console.BackgroundColor = bgColor.Value;
                 if (textColor != null)
                     Console.ForegroundColor = textColor.Value;
-
-                startY++; // Push GUI down from line 0
-
-                // Throw an exception if a parameter value would lead to drawing outside the console buffer...
-                if (startY < 0 || startY > Console.BufferHeight) throw new ArgumentOutOfRangeException(nameof(startY), "Origin point is beyond buffer bounds.");
-                if (x < 0 || x > Console.BufferWidth) throw new ArgumentOutOfRangeException(nameof(x), "X position is beyond buffer bounds.");
-                if (startY + height > Console.BufferHeight) throw new ArgumentOutOfRangeException(nameof(startY) + "', '" + nameof(height), "Too long.");
-                // ...or if the specified size is too small for the element to be drawn properly
-                if (height < 3) throw new ArgumentOutOfRangeException(nameof(height), "Length can't be less than 3 (<3).");
 
                 CharAtPosition(_cornerTL[(int)borderStyle + (int)edgeStyleTop], x, startY);
                 for (int i = startY + 1; i < startY + height - 1; i++)
@@ -181,20 +181,20 @@ namespace ConsoleGUI
         {
             try
             {
+                // Throw an exception if a parameter value would lead to drawing outside the console buffer...
+                if (left < 0 || left > GetGUIWidth) throw new ArgumentOutOfRangeException(nameof(left), "Origin point is beyond horizontal buffer bounds.");
+                if (top < 0 || top > GetGUIHeight) throw new ArgumentOutOfRangeException(nameof(top), "Origin point is beyond vertical buffer bounds.");
+                if (left + width > GetGUIWidth) throw new ArgumentOutOfRangeException(nameof(left) + "', '" + nameof(width), "Too wide.");
+                if (top + height > GetGUIHeight) throw new ArgumentOutOfRangeException(nameof(top) + "', '" + nameof(height), "Too tall.");
+                // ...or if the specified size is too small for the element to be drawn properly
+                if (width < 2 || height < 2) throw new ArgumentOutOfRangeException(nameof(width) + ", " + nameof(height), "Can't be smaller than 2 by 2.");
+
+                top++; // Push GUI down from line 0
+
                 if (bgColor != null)
                     Console.BackgroundColor = bgColor.Value;
                 if (textColor != null)
                     Console.ForegroundColor = textColor.Value;
-
-                top++; // Push GUI down from line 0
-
-                // Throw an exception if a parameter value would lead to drawing outside the console buffer...
-                if (left < 0 || left > Console.BufferWidth) throw new ArgumentOutOfRangeException(nameof(left), "Origin point is beyond horizontal buffer bounds.");
-                if (top < 0 || top > Console.BufferHeight) throw new ArgumentOutOfRangeException(nameof(top), "Origin point is beyond vertical buffer bounds.");
-                if (left + width > Console.BufferWidth) throw new ArgumentOutOfRangeException(nameof(left) + "', '" + nameof(width), "Too wide.");
-                if (top + height > Console.BufferHeight) throw new ArgumentOutOfRangeException(nameof(top) + "', '" + nameof(height), "Too tall.");
-                // ...or if the specified size is too small for the element to be drawn properly
-                if (width < 2 || height < 2) throw new ArgumentOutOfRangeException(nameof(width) + ", " + nameof(height), "Can't be smaller than 2 by 2.");
 
                 // Construct the horizontal lines here so you don't have to do it multiple times
                 string backgroundFiller = " ";
