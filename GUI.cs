@@ -11,8 +11,8 @@ namespace ConsoleGUI
     {
         private static readonly int _guiWidth = 128;
         private static readonly int _guiHeight = 48;
-        private const ConsoleColor _guiColor = ConsoleColor.DarkMagenta;
-        private const ConsoleColor _guiTextColor = ConsoleColor.Yellow;
+        private const ConsoleColor _guiColor = ConsoleColor.Gray;
+        private const ConsoleColor _guiTextColor = ConsoleColor.Black;
 
         private const string _lineH = "─═";
         private const string _lineV = "│║";
@@ -20,6 +20,17 @@ namespace ConsoleGUI
         private const string _cornerTR = "┐╗┤╣┬╦┼╬";
         private const string _cornerBL = "└╚├╠┴╩┼╬";
         private const string _cornerBR = "┘╝┤╣┴╩┼╬";
+        //private const string _block = "■█▀▄";
+        //private const string _halftone = "░▒▓";
+        //private const string _triangleT = "▵▴△▲";
+        //private const string _triangleB = "▿▾▽▼";
+        //private const string _triangleL = "◃◂◁◀";
+        //private const string _triangleR = "▹▸▷▶";
+        //private const string _triangleTL = "◸◤";
+        //private const string _triangleTR = "◹◥";
+        //private const string _triangleBL = "◺◣";
+        //private const string _triangleBR = "◿◢";
+
 
         public enum BorderStyle
         {
@@ -29,6 +40,7 @@ namespace ConsoleGUI
 
         public enum EdgeStyle
         {
+            None = 0,
             VerticalJunction = 2,
             HorizontalJunction = 4,
             Crossing = 6
@@ -60,12 +72,7 @@ namespace ConsoleGUI
             Console.ForegroundColor = _guiTextColor;
             Console.Clear();
 
-            string clearLine = string.Empty;
-            for (int i = 0; i < GetGUIWidth; i++)
-            {
-                clearLine += " ";
-            }
-            PrintError(clearLine);
+            GUI.PrintInfo("Press 'Q' to quit. :)");
         }
 
         static void DisableResize()
@@ -74,7 +81,7 @@ namespace ConsoleGUI
             IntPtr sysMenu = GetSystemMenu(handle, false);
 
             if (handle != IntPtr.Zero)
-                DeleteMenu(sysMenu, 0xF000, 0x00000000);
+                PrintInfo($"DeleteMenu(..) says: '{DeleteMenu(sysMenu, 0xF000, 0x00000000)}'");
         }
 
         [DllImport("user32.dll")]
@@ -85,16 +92,14 @@ namespace ConsoleGUI
         private static extern IntPtr GetConsoleWindow();
 
         
-        public static void PrintError(string output)
+        public static void PrintInfo(string output)
         {
-            Console.SetCursorPosition(0, 0);
-            Console.BackgroundColor = ConsoleColor.Black;
-            Console.ForegroundColor = ConsoleColor.White;
-            
-            Console.Write(output);
+            if (errorLog.Text == string.Empty)
+                errorLog.Text = output;
+            else
+                errorLog.Text = output + "\n" + errorLog.Text;
 
-            Console.BackgroundColor = _guiColor;
-            Console.ForegroundColor = _guiTextColor;
+            errorLog.Render();
         }
 
         private static void CharAtPosition(char output, int x, int y)
@@ -104,7 +109,7 @@ namespace ConsoleGUI
         }
 
         public static void DrawLine(int startX, int y, int width, BorderStyle borderStyle = 0,
-            EdgeStyle edgeStyleLeft = EdgeStyle.VerticalJunction, EdgeStyle edgeStyleRight = EdgeStyle.VerticalJunction,
+            EdgeStyle edgeStyleLeft = EdgeStyle.None, EdgeStyle edgeStyleRight = EdgeStyle.None,
             ConsoleColor? bgColor = null, ConsoleColor? textColor = null)
         {
             try
@@ -118,19 +123,25 @@ namespace ConsoleGUI
 
                 y++; // Push GUI down from line 0
 
-                if (bgColor != null)
-                    Console.BackgroundColor = bgColor.Value;
-                if (textColor != null)
-                    Console.ForegroundColor = textColor.Value;
+                Console.BackgroundColor = bgColor ?? _guiColor;
+                Console.ForegroundColor = textColor ?? _guiTextColor;
 
-                CharAtPosition(_cornerTL[(int)borderStyle + (int)edgeStyleLeft], startX, y);
+                if (edgeStyleLeft == EdgeStyle.None)
+                    CharAtPosition(_lineH[(int)borderStyle], startX, y);
+                else
+                    CharAtPosition(_cornerTL[(int)borderStyle + (int)edgeStyleLeft], startX, y);
+
                 for (int i = startX + 1; i < startX + width - 1; i++)
                     Console.Write(_lineH[(int)borderStyle]);
-                Console.Write(_cornerTR[(int)borderStyle + (int)edgeStyleRight]);
+
+                if (edgeStyleRight == EdgeStyle.None)
+                    Console.Write(_lineH[(int)borderStyle]);
+                else
+                    Console.Write(_cornerTR[(int)borderStyle + (int)edgeStyleRight]);
             }
             catch (ArgumentOutOfRangeException ex)
             {
-                PrintError("GUI.DrawLine error: " + ex.Message);
+                PrintInfo("GUI.DrawLine error: " + ex.Message);
             }
             finally
             {
@@ -140,7 +151,7 @@ namespace ConsoleGUI
         }
 
         public static void DrawColumn(int x, int startY, int height, BorderStyle borderStyle = 0,
-            EdgeStyle edgeStyleTop = EdgeStyle.HorizontalJunction, EdgeStyle edgeStyleBottom = EdgeStyle.HorizontalJunction,
+            EdgeStyle edgeStyleTop = EdgeStyle.None, EdgeStyle edgeStyleBottom = EdgeStyle.None,
             ConsoleColor? bgColor = null, ConsoleColor? textColor = null)
         {
             try
@@ -154,19 +165,25 @@ namespace ConsoleGUI
 
                 startY++; // Push GUI down from line 0
 
-                if (bgColor != null)
-                    Console.BackgroundColor = bgColor.Value;
-                if (textColor != null)
-                    Console.ForegroundColor = textColor.Value;
+                Console.BackgroundColor = bgColor ?? _guiColor;
+                Console.ForegroundColor = textColor ?? _guiTextColor;
 
-                CharAtPosition(_cornerTL[(int)borderStyle + (int)edgeStyleTop], x, startY);
+                if (edgeStyleTop == EdgeStyle.None)
+                    CharAtPosition(_lineV[(int)borderStyle], x, startY);
+                else
+                    CharAtPosition(_cornerTL[(int)borderStyle + (int)edgeStyleTop], x, startY);
+                
                 for (int i = startY + 1; i < startY + height - 1; i++)
                     CharAtPosition(_lineV[(int)borderStyle], x, i);
-                CharAtPosition(_cornerBL[(int)borderStyle + (int)edgeStyleBottom], x, startY + height - 1);
+
+                if (edgeStyleBottom == EdgeStyle.None)
+                    CharAtPosition(_lineV[(int)borderStyle], x, startY + height - 1);
+                else
+                    CharAtPosition(_cornerBL[(int)borderStyle + (int)edgeStyleBottom], x, startY + height - 1);
             }
             catch (ArgumentOutOfRangeException ex)
             {
-                PrintError("GUI.DrawColumn error: " + ex.Message);
+                PrintInfo("GUI.DrawColumn error: " + ex.Message);
             }
             finally
             {
@@ -191,10 +208,8 @@ namespace ConsoleGUI
 
                 top++; // Push GUI down from line 0
 
-                if (bgColor != null)
-                    Console.BackgroundColor = bgColor.Value;
-                if (textColor != null)
-                    Console.ForegroundColor = textColor.Value;
+                Console.BackgroundColor = bgColor ?? _guiColor;
+                Console.ForegroundColor = textColor ?? _guiTextColor;
 
                 // Construct the horizontal lines here so you don't have to do it multiple times
                 string backgroundFiller = " ";
@@ -232,7 +247,7 @@ namespace ConsoleGUI
             }
             catch (ArgumentOutOfRangeException ex)
             {
-                PrintError("GUI.DrawBox error: " + ex.Message);
+                PrintInfo("GUI.DrawBox error: " + ex.Message);
             }
             finally
             {

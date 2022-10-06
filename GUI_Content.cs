@@ -5,8 +5,16 @@ namespace ConsoleGUI
 {
     public static partial class GUI
     {
+        private static TextBox errorLog = new(0, 0, _guiWidth, 1, string.Empty, ConsoleColor.Black, ConsoleColor.White);
+        private static List<TextBox> textFields = new();
         private static List<TextBox> textBoxes = new();
         private static byte textBoxSelection = 0;
+
+        public enum Interactable
+        {
+            No,
+            Yes
+        }
 
         private class TextBox
         {
@@ -19,6 +27,9 @@ namespace ConsoleGUI
             private string[]    textFormatted;
             private int startLine;
 
+            private ConsoleColor bgColor;
+            private ConsoleColor textColor;
+
             public string Text
             {
                 set
@@ -30,7 +41,7 @@ namespace ConsoleGUI
                 get => textFull;
             }
 
-            public TextBox(int left, int top, int width, int height, string text = "")
+            public TextBox(int left, int top, int width, int height, string text = "", ConsoleColor bgColor = _guiColor, ConsoleColor textColor = _guiTextColor)
             {
                 this.left = left;
                 this.top = top;
@@ -40,6 +51,9 @@ namespace ConsoleGUI
                 this.textFull = text;
                 this.textFormatted = FormatText(textFull, width);
                 this.startLine = 0;
+
+                this.bgColor = bgColor;
+                this.textColor = textColor;
             }
 
             private static string[] FormatText(string text, int width)
@@ -156,6 +170,9 @@ namespace ConsoleGUI
 
             public void Render()
             {
+                Console.BackgroundColor = bgColor;
+                Console.ForegroundColor = textColor;
+
                 for (int i = 0; i < height; i++)
                 {
                     if (i + startLine >= textFormatted.Length)
@@ -164,12 +181,16 @@ namespace ConsoleGUI
                     Console.SetCursorPosition(left, top + i);
                     Console.Write(textFormatted[i + startLine]);
                 }
+
+                Console.BackgroundColor = _guiColor;
+                Console.ForegroundColor = _guiTextColor;
             }
         }
 
-        public static void CreateTextbox(int left, int top, int width, int height, string text = "")
+        public static void CreateTextbox(int left, int top, int width, int height, string text = "",
+            ConsoleColor? bgColor = null, ConsoleColor? textColor = null, Interactable interactable = Interactable.No)
         {
-            if (textBoxes.Count < byte.MaxValue)
+            if (textBoxes.Count < byte.MaxValue || interactable == Interactable.No)
             {
                 try
                 {
@@ -181,15 +202,25 @@ namespace ConsoleGUI
 
                     top++;  // Push GUI down from row 0
 
-                    TextBox textBox = new(left, top, width, height, text);
+                    // Assigns default colors if none are provided
+                    bgColor ??= _guiColor;
+                    textColor ??= _guiTextColor;
+
+                    TextBox textBox = new(left, top, width, height, text, bgColor.Value, textColor.Value);
 
                     textBox.Render();
+
+                    if (interactable == Interactable.No)
+                    {
+                        textFields.Add(textBox);
+                        return;
+                    }
 
                     textBoxes.Add(textBox);
                 }
                 catch (ArgumentOutOfRangeException ex)
                 {
-                    PrintError("GUI.CreateTextbox error: " + ex.Message);
+                    PrintInfo("GUI.CreateTextbox error: " + ex.Message);
                 }
             }
         }
@@ -231,6 +262,14 @@ namespace ConsoleGUI
                             break;
                         }
                         NextTextbox();
+                        break;
+
+                    case ConsoleKey.PageUp:
+                        errorLog.ScrollUp();
+                        break;
+
+                    case ConsoleKey.PageDown:
+                        errorLog.ScrollDown();
                         break;
 
                     case ConsoleKey.UpArrow:
