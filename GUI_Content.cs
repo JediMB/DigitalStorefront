@@ -181,9 +181,6 @@ namespace ConsoleGUI
                     Console.SetCursorPosition(left, top + i);
                     Console.Write(textFormatted[i + startLine]);
                 }
-
-                Console.BackgroundColor = _guiColor;
-                Console.ForegroundColor = _guiTextColor;
             }
         }
 

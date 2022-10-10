@@ -27,6 +27,10 @@ namespace Digital_Storefront
             GUI.DrawBox(0, 0, GUI.GetGUIWidth, 9, GUI.BorderStyle.Double, 0, 0, 0, 0, ConsoleColor.DarkBlue, ConsoleColor.Yellow);
             GUI.DrawLine(1, 6, GUI.GetGUIWidth - 2, 0, 0, 0, ConsoleColor.DarkBlue, ConsoleColor.Yellow);
             GUI.DrawBox(0, GUI.GetGUIHeight - 6, GUI.GetGUIWidth, 6, GUI.BorderStyle.Double, 0, 0, 0, 0, ConsoleColor.DarkBlue, ConsoleColor.Yellow);
+            GUI.DrawLineZigzag(1, 9, GUI.GetGUIWidth-2, GUI.BorderStyle.Single, GUI.ZigzagStyle.Regular, true);
+            GUI.DrawColumnZigzag(0, 9, 32, GUI.BorderStyle.Single, GUI.ZigzagStyle.Regular);
+            GUI.DrawColumnZigzag(GUI.GetGUIWidth-2, 9, 32, GUI.BorderStyle.Single, GUI.ZigzagStyle.Reversed);
+            GUI.DrawLineZigzag(1, 39, GUI.GetGUIWidth-2, GUI.BorderStyle.Single, GUI.ZigzagStyle.Reversed, true);
         }
         
         static void CreateContent()
@@ -34,7 +38,7 @@ namespace Digital_Storefront
             GUI.CreateTextbox(2, 1, 76, 5, Storefront.logo, ConsoleColor.DarkBlue, ConsoleColor.Cyan);
             GUI.CreateTextbox(GUI.GetGUIWidth - 27, 1, 25, 5, Storefront.name + "\n" + Storefront.addressStore, ConsoleColor.DarkBlue, ConsoleColor.Yellow);
             GUI.CreateTextbox(27, 7, 75, 1, Storefront.slogan, ConsoleColor.DarkBlue, ConsoleColor.Yellow);
-            GUI.CreateTextbox(2, 9, GUI.GetGUIWidth - 3, GUI.GetGUIHeight - 15, numberone, null, null, GUI.Interactable.Yes);
+            GUI.CreateTextbox(2, 11, GUI.GetGUIWidth - 4, GUI.GetGUIHeight - 20, numberone, null, null, GUI.Interactable.Yes);
             GUI.CreateTextbox(GUI.GetGUIWidth - 27, GUI.GetGUIHeight - 5, 25, 4, Storefront.name + "\n" + Storefront.addressBilling, ConsoleColor.DarkBlue, ConsoleColor.Yellow);
         }
     }

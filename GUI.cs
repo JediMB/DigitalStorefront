@@ -54,6 +54,12 @@ namespace ConsoleGUI
             Crossing = 6
         }
 
+        public enum ZigzagStyle
+        {
+            Regular = 0,
+            Reversed = 1
+        }
+
         public static int GetGUIWidth { get => _guiWidth; }
         public static int GetGUIHeight { get => _guiHeight; }
 
@@ -108,6 +114,56 @@ namespace ConsoleGUI
             Console.Write(output);
         }
 
+        public static void DrawLineZigzag(int startX, int y, int evenWidth, BorderStyle borderStyle = 0,
+            ZigzagStyle zigzagStyle = ZigzagStyle.Regular, bool straightEdge = false, ConsoleColor? bgColor = null, ConsoleColor? textColor = null)
+        {
+            try
+            {
+                // Throw an exception if a parameter value would lead to drawing outside the console buffer...
+                if (startX < 0 || startX > GetGUIWidth) throw new ArgumentOutOfRangeException(nameof(startX), "Origin point is beyond buffer bounds.");
+                if (y < 0 || y+1 > GetGUIHeight) throw new ArgumentOutOfRangeException(nameof(y), "Y position is beyond buffer bounds.");
+                if (startX + evenWidth > GetGUIWidth) throw new ArgumentOutOfRangeException(nameof(startX) + "', '" + nameof(evenWidth), "Too long.");
+                // ...or if the specified size is too small for the element to be drawn properly
+                if (evenWidth < 4) throw new ArgumentOutOfRangeException(nameof(evenWidth), "Length can't be less than 4.");
+                if (evenWidth % 2 != 0) throw new ArgumentException("Length must be an even number.", nameof(evenWidth));
+
+                y++; // Push GUI down from line 0
+
+                Console.BackgroundColor = bgColor ?? _guiColor;
+                Console.ForegroundColor = textColor ?? _guiTextColor;
+
+                string[] fragment = {
+                    $"{_cornerTL[(int)borderStyle]}{_cornerTR[(int)borderStyle]}",
+                    $"{_cornerBL[(int)borderStyle]}{_cornerBR[(int)borderStyle]}"
+                };
+                string line = string.Empty;
+
+                for (int i = 0; i < evenWidth-1; i+=2)
+                {
+                    line += fragment[0 + (int)zigzagStyle];
+                }
+
+                if (straightEdge)
+                    line = _lineH[(int)borderStyle] + line[1..(line.Length-1)] + _lineH[(int)borderStyle];
+
+                Console.SetCursorPosition(startX, y + (int)zigzagStyle);
+                Console.Write(line);
+
+                line = string.Empty;
+
+                for (int i = 0; i < evenWidth-3; i+=2)
+                {
+                    line += fragment[1 - (int)zigzagStyle];
+                }
+                Console.SetCursorPosition(startX + 1, y + 1 - (int)zigzagStyle);
+                Console.WriteLine(line);
+            }
+            catch (ArgumentException ex)
+            {
+                PrintInfo("GUI.DrawLine error: " + ex.Message);
+            }
+        }
+
         public static void DrawLine(int startX, int y, int width, BorderStyle borderStyle = 0,
             EdgeStyle edgeStyleLeft = EdgeStyle.None, EdgeStyle edgeStyleRight = EdgeStyle.None,
             ConsoleColor? bgColor = null, ConsoleColor? textColor = null)
@@ -143,11 +199,48 @@ namespace ConsoleGUI
             {
                 PrintInfo("GUI.DrawLine error: " + ex.Message);
             }
-            finally
+        }
+
+        public static void DrawColumnZigzag(int x, int startY, int evenHeight, BorderStyle borderStyle = 0,
+            ZigzagStyle zigzagStyle = ZigzagStyle.Regular, bool straightEdge = false, ConsoleColor ? bgColor = null, ConsoleColor? textColor = null)
+        {
+            try
             {
-                Console.BackgroundColor = _guiColor;
-                Console.ForegroundColor = _guiTextColor;
+                // Throw an exception if a parameter value would lead to drawing outside the console buffer...
+                if (startY < 0 || startY > GetGUIHeight) throw new ArgumentOutOfRangeException(nameof(startY), "Origin point is beyond buffer bounds.");
+                if (x < 0 || x > GetGUIWidth) throw new ArgumentOutOfRangeException(nameof(x), "X position is beyond buffer bounds.");
+                if (startY + evenHeight > GetGUIHeight) throw new ArgumentOutOfRangeException(nameof(startY) + "', '" + nameof(evenHeight), "Too long.");
+                // ...or if the specified size is too small for the element to be drawn properly
+                if (evenHeight < 4) throw new ArgumentOutOfRangeException(nameof(evenHeight), "Length can't be less than 3 (<3).");
+                if (evenHeight % 2 != 0) throw new ArgumentException("Height must be an even number.", nameof(evenHeight));
+
+                startY++; // Push GUI down from line 0
+
+                Console.BackgroundColor = bgColor ?? _guiColor;
+                Console.ForegroundColor = textColor ?? _guiTextColor;
+
+                string[] fragment = {
+                    $"{_cornerTL[(int)borderStyle]}{_cornerBR[(int)borderStyle]}",
+                    $"{_cornerBL[(int)borderStyle]}{_cornerTR[(int)borderStyle]}"
+                };
+
+                CharAtPosition(straightEdge ? _lineV[(int)borderStyle] : fragment[0 + (int)zigzagStyle][0 + (int)zigzagStyle], x + (int)zigzagStyle, startY);
+
+                for (int i = startY + 1; i < startY + evenHeight -1; i+=2)
+                {
+                    Console.SetCursorPosition(x, i);
+                    Console.Write(fragment[1 - (int)zigzagStyle]);
+                    Console.SetCursorPosition(x, i+1);
+                    Console.Write(fragment[0 + (int)zigzagStyle]);
+                }
+
+                CharAtPosition(straightEdge ? _lineV[(int)borderStyle] : fragment[1 - (int)zigzagStyle][0 + (int)zigzagStyle], x + (int)zigzagStyle, startY + evenHeight - 1);
             }
+            catch (ArgumentException ex)
+            {
+                PrintInfo("GUI.DrawColumn error: " + ex.Message);
+            }
+
         }
 
         public static void DrawColumn(int x, int startY, int height, BorderStyle borderStyle = 0,
@@ -184,11 +277,6 @@ namespace ConsoleGUI
             catch (ArgumentOutOfRangeException ex)
             {
                 PrintInfo("GUI.DrawColumn error: " + ex.Message);
-            }
-            finally
-            {
-                Console.BackgroundColor = _guiColor;
-                Console.ForegroundColor = _guiTextColor;
             }
         }
 
@@ -248,11 +336,6 @@ namespace ConsoleGUI
             catch (ArgumentOutOfRangeException ex)
             {
                 PrintInfo("GUI.DrawBox error: " + ex.Message);
-            }
-            finally
-            {
-                Console.BackgroundColor = _guiColor;
-                Console.ForegroundColor = _guiTextColor;
             }
         }
     }
