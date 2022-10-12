@@ -77,8 +77,6 @@ namespace ConsoleGUI
             Console.BackgroundColor = _guiColor;
             Console.ForegroundColor = _guiTextColor;
             Console.Clear();
-
-            GUI.PrintInfo("Press 'Q' to quit. :)");
         }
 
         static void DisableResize()
@@ -114,7 +112,7 @@ namespace ConsoleGUI
             Console.Write(output);
         }
 
-        public static void DrawLineZigzag(int startX, int y, int evenWidth, BorderStyle borderStyle = 0,
+        public static void DrawLineZigzag(int startX, int y, int width, BorderStyle borderStyle = 0,
             ZigzagStyle zigzagStyle = ZigzagStyle.Regular, bool straightEdge = false, ConsoleColor? bgColor = null, ConsoleColor? textColor = null)
         {
             try
@@ -122,15 +120,18 @@ namespace ConsoleGUI
                 // Throw an exception if a parameter value would lead to drawing outside the console buffer...
                 if (startX < 0 || startX > GetGUIWidth) throw new ArgumentOutOfRangeException(nameof(startX), "Origin point is beyond buffer bounds.");
                 if (y < 0 || y+1 > GetGUIHeight) throw new ArgumentOutOfRangeException(nameof(y), "Y position is beyond buffer bounds.");
-                if (startX + evenWidth > GetGUIWidth) throw new ArgumentOutOfRangeException(nameof(startX) + "', '" + nameof(evenWidth), "Too long.");
+                if (startX + width > GetGUIWidth) throw new ArgumentOutOfRangeException(nameof(startX) + "', '" + nameof(width), "Too long.");
                 // ...or if the specified size is too small for the element to be drawn properly
-                if (evenWidth < 4) throw new ArgumentOutOfRangeException(nameof(evenWidth), "Length can't be less than 4.");
-                if (evenWidth % 2 != 0) throw new ArgumentException("Length must be an even number.", nameof(evenWidth));
+                if (width < 2 /*4*/) throw new ArgumentOutOfRangeException(nameof(width), "Length can't be less than 2.");
+                //if (evenWidth % 2 != 0) throw new ArgumentException("Length must be an even number.", nameof(evenWidth));
 
                 y++; // Push GUI down from line 0
 
                 Console.BackgroundColor = bgColor ?? _guiColor;
                 Console.ForegroundColor = textColor ?? _guiTextColor;
+
+                int numberOfZags = width / 4;
+                int remainder = width % 4;      // can be 0, 1, 2, or *3* (standard)
 
                 string[] fragment = {
                     $"{_cornerTL[(int)borderStyle]}{_cornerTR[(int)borderStyle]}",
@@ -138,7 +139,7 @@ namespace ConsoleGUI
                 };
                 string line = string.Empty;
 
-                for (int i = 0; i < evenWidth-1; i+=2)
+                for (int i = 0; i < width-1; i+=2)
                 {
                     line += fragment[0 + (int)zigzagStyle];
                 }
@@ -151,7 +152,7 @@ namespace ConsoleGUI
 
                 line = string.Empty;
 
-                for (int i = 0; i < evenWidth-3; i+=2)
+                for (int i = 0; i < width-3; i+=2)
                 {
                     line += fragment[1 - (int)zigzagStyle];
                 }

@@ -4,7 +4,7 @@ namespace Articles
 {
     public class Mug : Article
     {
-        public enum Type
+        public enum Types
         {
             Null = -1,
             Small,
@@ -13,11 +13,21 @@ namespace Articles
             Supersize
         }
 
-        private Type _type;
+        private readonly Types _type;
+
+        public Types Type { get => _type; }
 
         public Mug()
         {
-            _type = Type.Null;
+            _type = Types.Null;
+        }
+
+        public Mug(string print, decimal price, Types type, float avgScore)
+        {
+            _print = print;
+            _price = price;
+            _type = type;
+            _averageReviewScore = avgScore;
         }
     }
 }
