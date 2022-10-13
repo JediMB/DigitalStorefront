@@ -5,8 +5,16 @@ namespace ConsoleGUI
 {
     public static partial class GUI
     {
-        private static List<TextBox> textBoxes = new();
+        private static readonly TextBox errorLog = new(0, 0, _guiWidth, 1, string.Empty, ConsoleColor.Black, ConsoleColor.White);
+        private static readonly List<TextBox> textFields = new();
+        private static readonly List<TextBox> textBoxes = new();
         private static byte textBoxSelection = 0;
+
+        public enum Interactable
+        {
+            No,
+            Yes
+        }
 
         private class TextBox
         {
@@ -19,6 +27,9 @@ namespace ConsoleGUI
             private string[]    textFormatted;
             private int startLine;
 
+            private readonly ConsoleColor bgColor;
+            private readonly ConsoleColor textColor;
+
             public string Text
             {
                 set
@@ -30,7 +41,7 @@ namespace ConsoleGUI
                 get => textFull;
             }
 
-            public TextBox(int left, int top, int width, int height, string text = "")
+            public TextBox(int left, int top, int width, int height, string text = "", ConsoleColor bgColor = _guiColor, ConsoleColor textColor = _guiTextColor)
             {
                 this.left = left;
                 this.top = top;
@@ -40,6 +51,9 @@ namespace ConsoleGUI
                 this.textFull = text;
                 this.textFormatted = FormatText(textFull, width);
                 this.startLine = 0;
+
+                this.bgColor = bgColor;
+                this.textColor = textColor;
             }
 
             private static string[] FormatText(string text, int width)
@@ -76,16 +90,9 @@ namespace ConsoleGUI
                         if (textIn[i] == '\r' && textIn[i + 1] == '\n')     // If carriage return followed by newline, remove the latter
                             textIn = textIn.Remove(i + 1, 1);
 
-                        string line = textIn[..i];                          // Create the new line of text
+                        lines.Enqueue(textIn[..i].PadRight(maxLength));     // Put the new line in the queue
                         textIn = textIn[(i + 1)..];                         // Remove that line from the full text
-
-                        for (int j = line.Length; j < maxLength; j++)       // Fill out the string with a trail of blankspaces
-                        {
-                            line += " ";
-                        }
-
-                        lines.Enqueue(line);                                // Put the line in the queue
-                        
+                                                                        
                         if (textIn.Length > maxLength)                      // If there is more than one more line of text, start over...
                         {
                             textOut = textIn;
@@ -96,39 +103,33 @@ namespace ConsoleGUI
                     }
                 }
 
-                // If the remaining text is longer than the textbox and doesn't have any linebreaks, split the string at a blankspace
+                // If the remaining text is longer than the textbox and doesn't have any linebreaks, split the string at a dash or blankspace
                 if (textIn.Length > maxLength)
                 {
                     for (int i = maxLength; i >= 0; i--)
                     {
+                        if (i != maxLength && textIn[i] == '-')
+                        {
+                            lines.Enqueue(textIn[..(i + 1)].PadRight(maxLength));
+                            textOut = textIn[(i + 1)..];
+                            return;
+                        }
+
                         if (textIn[i] == ' ')
                         {
-                            string line = textIn[..i];
-
-                            for (int j = line.Length; j < maxLength; j++)
-                            {
-                                line += " ";
-                            }
-
-                            lines.Enqueue(line);
+                            lines.Enqueue(textIn[..i].PadRight(maxLength));
                             textOut = textIn[(i + 1)..];
                             return;
                         }
                     }
                 }
 
-                // If the remaining text is shorter than the textbox width and doesn't contain any more linebreak characters...
-                for (int i = textIn.Length; i < maxLength; i++)           
-                {
-                    textIn += " ";      // ...fill out the final line/row with blankspaces to match the box width...
-                }
-
-                lines.Enqueue(textIn);  // ...and add it to the queue
+                lines.Enqueue(textIn.PadRight(maxLength));  // If the remaining, linebreak-free text fits in the textbox, add it to the queue
 
                 textOut = string.Empty;
             }
 
-            public void ScrollUp(/*byte rows = 1*/)
+            public void ScrollUp()
             {
                 if (textFormatted.Length > height)
                 {
@@ -141,7 +142,7 @@ namespace ConsoleGUI
                 Render();
             }
 
-            public void ScrollDown(/*byte rows = 1*/)
+            public void ScrollDown()
             {
                 if (textFormatted.Length > height)
                 {
@@ -156,6 +157,9 @@ namespace ConsoleGUI
 
             public void Render()
             {
+                Console.BackgroundColor = bgColor;
+                Console.ForegroundColor = textColor;
+
                 for (int i = 0; i < height; i++)
                 {
                     if (i + startLine >= textFormatted.Length)
@@ -167,9 +171,10 @@ namespace ConsoleGUI
             }
         }
 
-        public static void CreateTextbox(int left, int top, int width, int height, string text = "")
+        public static void CreateTextbox(int left, int top, int width, int height, string text = "",
+            ConsoleColor? bgColor = null, ConsoleColor? textColor = null, Interactable interactable = Interactable.No)
         {
-            if (textBoxes.Count < byte.MaxValue)
+            if (textBoxes.Count < byte.MaxValue || interactable == Interactable.No)
             {
                 try
                 {
@@ -181,15 +186,25 @@ namespace ConsoleGUI
 
                     top++;  // Push GUI down from row 0
 
-                    TextBox textBox = new(left, top, width, height, text);
+                    // Assigns default colors if none are provided
+                    bgColor ??= _guiColor;
+                    textColor ??= _guiTextColor;
+
+                    TextBox textBox = new(left, top, width, height, text, bgColor.Value, textColor.Value);
 
                     textBox.Render();
+
+                    if (interactable == Interactable.No)
+                    {
+                        textFields.Add(textBox);
+                        return;
+                    }
 
                     textBoxes.Add(textBox);
                 }
                 catch (ArgumentOutOfRangeException ex)
                 {
-                    PrintError("GUI.CreateTextbox error: " + ex.Message);
+                    PrintInfo("GUI.CreateTextbox error: " + ex.Message);
                 }
             }
         }
@@ -202,6 +217,8 @@ namespace ConsoleGUI
 
                 if (textBoxSelection == byte.MaxValue)
                     textBoxSelection = (byte)(textBoxes.Count - 1);
+
+                textBoxes[textBoxSelection].Render();
             }
         }
 
@@ -213,6 +230,8 @@ namespace ConsoleGUI
 
                 if (textBoxSelection >= textBoxes.Count)
                     textBoxSelection = 0;
+
+                textBoxes[textBoxSelection].Render();
             }
         }
 
@@ -231,6 +250,14 @@ namespace ConsoleGUI
                             break;
                         }
                         NextTextbox();
+                        break;
+
+                    case ConsoleKey.PageUp:
+                        errorLog.ScrollUp();
+                        break;
+
+                    case ConsoleKey.PageDown:
+                        errorLog.ScrollDown();
                         break;
 
                     case ConsoleKey.UpArrow:

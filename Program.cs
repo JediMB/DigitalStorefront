@@ -1,4 +1,5 @@
 ﻿using System.Runtime.Versioning;
+using Articles;
 using ConsoleGUI;
 using Humanizer;
 
@@ -12,8 +13,13 @@ namespace Digital_Storefront
         {
             GUI.Initialize("Digital Storefront");
 
-            DrawGUI();
+            LoadContent();
 
+            DrawGUI();
+            CreateContent();
+
+            GUI.PrintInfo("'Tab' lets you switch between GUI elements and the arrow keys scroll them up and down.");
+            GUI.PrintInfo("Press 'Q' to quit. 'Page Down' and 'Page Up' to scroll through this log. :)");
             GUI.ControlTextboxes();
         }
 
@@ -21,9 +27,46 @@ namespace Digital_Storefront
         //const string pussycats = "Josie and the Pussycats\r\nLong tails and ears for hats\r\nGuitars, and sharps and flats\r\nNeat, sweet, a groovy song\r\nYou're invited, come along\r\n\r\nHurry, hurry\r\n\r\nSee you all in Persia, or maybe France\r\nWe could be in India, or perchance\r\nGroove with us in Bangkok, makes no difference\r\nWe're involved with this or that\r\nEverywhere the action's at\r\n\r\nCome along now\r\n\r\nJosie and the Pussycats\r\nNo time for purrs and pats\r\nWon't run when they hear scat\r\nJosie and the Pussycats\r\n\r\n\r\nHurry, hurry\r\n\r\nSee you all in Persia, or maybe France\r\nWe could be in India, or perchance\r\nGroove with us in Bangkok, makes no difference\r\nWe're involved with this or that\r\nEverywhere the action's at\r\n\r\nCome along now\r\n\r\nJosie and the Pussycats\r\nNo time for purrs and pats\r\nWon't run when they hear scat\r\nThere where the plot begins\r\nCome on, watch the good guys win\r\nJosie and the Pussycats\r\nJosie and the Pussycats\r\n\r\n\r\nJosie and the Pussycats\r\nJosie and the Pussycats\r\nJosie and the Pussycats\r\nJosie and the Pussycats\r\n\r\nJosie and the Pussycats\r\nJosie and the Pussycats\r\nJosie and the Pussycats\r\nJosie and the Pussycats\r\n\r\nJosie\r\nJosie\r\nJosie and the Pussycats\r\nJosie and the Pussycats\r\n\r\nJosie and the Pussycats\r\nJosie\r\nJosie and the Pussycats\r\nJosie and the Pussycats\r\n";
         //const string cyborgs = "fukisusabu kaze ga  yoku ni au\r\nku nin no senki to  hito no iu\r\ndaga wareware wa  ai no tame\r\ntatakai wasureta  hito no tame\r\nnamida de wataru chi no taiga\r\nyumemite hashiru shi no kouya\r\nCyborg senshi  taga tame ni tataku\r\nCyborg senshi  taga tame ni tataku\r\n\r\ntomurai no kane ga  yoku ni au\r\njigoku no shisha to  hito no iu\r\ndaga wareware wa  ai no tame\r\ntataki wasureta  hito no tame\r\nyami oiharau  toki no kane\r\nasu no yoake wo  tsugeru kane\r\nCyborg senshi  taga tame ni tataku\r\nCyborg senshi  taga tame ni tataku\r\n\r\ndaga wareware wa  ai no tame\r\ntatakai wasureta  hito no tame\r\nnamida de wataru chi no taiga\r\nyumemite hashiru shi no kouya\r\nCyborg senshi  taga tame ni tataku\r\nCyborg senshi  taga tame ni tataku";
 
+        static void LoadContent()
+        {
+            if (!Data.LoadMugsFromFile())
+            {
+                GUI.PrintInfo($"{Data.mugsFilename} not found.");
+                if (Data.GenerateMugs())
+                    GUI.PrintInfo("Mugs generated from prints data.");
+            }
+
+            if (!Data.LoadTShirtsFromFile())
+            {
+                GUI.PrintInfo($"{Data.tshirtsFilename} not found.");
+                if (Data.GenerateTShirts())
+                    GUI.PrintInfo("T-Shirts generated from prints data.");
+            }
+        }
+
         static void DrawGUI()
         {
-            GUI.DrawBox(0, 0, GUI.GetGUIWidth, GUI.GetGUIHeight, GUI.BorderStyle.Double);  
+            GUI.DrawBox(0, 0, GUI.GetGUIWidth, 9, GUI.BorderStyle.Double, 0, 0, 0, 0, ConsoleColor.DarkBlue, ConsoleColor.Yellow);
+            GUI.DrawLine(1, 6, GUI.GetGUIWidth - 2, 0, 0, 0, ConsoleColor.DarkBlue, ConsoleColor.Yellow);
+            GUI.DrawBox(0, GUI.GetGUIHeight - 6, GUI.GetGUIWidth, 6, GUI.BorderStyle.Double, 0, 0, 0, 0, ConsoleColor.DarkBlue, ConsoleColor.Yellow);
+            GUI.DrawLineZigzag(1, 9, GUI.GetGUIWidth-2, GUI.BorderStyle.Single, GUI.ZigzagStyle.Regular, true);
+            GUI.DrawColumnZigzag(0, 9, 32, GUI.BorderStyle.Single, GUI.ZigzagStyle.Regular);
+            GUI.DrawColumnZigzag(GUI.GetGUIWidth-2, 9, 32, GUI.BorderStyle.Single, GUI.ZigzagStyle.Reversed);
+            GUI.DrawLineZigzag(1, 39, GUI.GetGUIWidth-2, GUI.BorderStyle.Single, GUI.ZigzagStyle.Reversed, true);
+        }
+        
+        static void CreateContent()
+        {
+            GUI.CreateTextbox(2, 1, 76, 5, Data.logo, ConsoleColor.DarkBlue, ConsoleColor.Cyan);
+            GUI.CreateTextbox(GUI.GetGUIWidth - 27, 1, 25, 5, Data.name + "\n" + Data.addressStore, ConsoleColor.DarkBlue, ConsoleColor.Yellow);
+            GUI.CreateTextbox(27, 7, 75, 1, Data.slogan, ConsoleColor.DarkBlue, ConsoleColor.Yellow);
+            GUI.CreateTextbox(GUI.GetGUIWidth - 27, GUI.GetGUIHeight - 5, 25, 4, Data.name + "\n" + Data.addressBilling, ConsoleColor.DarkBlue, ConsoleColor.Yellow);
+
+            // TODO: En statisk rad ovanför innehållet som visar värdekategorierna
+            // TODO: Möjlighet att "markera" individuella rader istället för att bara scrolla textboxarna. Kan användas som meny!
+
+            GUI.CreateTextbox(2, 11, 62, GUI.GetGUIHeight - 20, Data.GetMugsAsColumns(true, true), null, null, GUI.Interactable.Yes);
+            GUI.CreateTextbox(GUI.GetGUIWidth - 64, 11, 62, GUI.GetGUIHeight - 20, Data.GetTShirtsAsColumns(true), null, null, GUI.Interactable.Yes);
         }
     }
 }
