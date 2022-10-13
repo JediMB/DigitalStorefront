@@ -1,4 +1,5 @@
 ﻿using Articles;
+using System.Reflection;
 
 namespace Articles
 {
@@ -37,6 +38,20 @@ namespace Articles
             _size = size;
             _fabric = fabric;
             _averageReviewScore = avgScore;
+        }
+
+        public override string ToString()
+        {
+            return $"{_print} {_fabric} {_size} {_averageReviewScore:F1} {_price:C2}";
+        }
+
+        public string ToString(int printWidth, int priceWidth, int sizeWidth, int fabricWidth, int scoreWidth, int padding = 0, int extraPadding = 0)
+        {
+            return _print.PadRight(printWidth + padding) +
+                $"{_fabric}".PadRight(fabricWidth + padding) +
+                $"{_size}".PadRight(sizeWidth + padding) +
+                $"{_averageReviewScore:F1}".PadLeft(padding + extraPadding + scoreWidth) +
+                $"{_price:C2}".PadLeft(padding + priceWidth);
         }
     }
 }

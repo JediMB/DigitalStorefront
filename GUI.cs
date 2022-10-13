@@ -11,6 +11,7 @@ namespace ConsoleGUI
     {
         private static readonly int _guiWidth = 128;
         private static readonly int _guiHeight = 48;
+        private static int _logEntries = 0;
         private const ConsoleColor _guiColor = ConsoleColor.Gray;
         private const ConsoleColor _guiTextColor = ConsoleColor.Black;
 
@@ -99,11 +100,12 @@ namespace ConsoleGUI
         public static void PrintInfo(string output)
         {
             if (errorLog.Text == string.Empty)
-                errorLog.Text = output;
+                errorLog.Text = $"({_logEntries:00}) : {output}";
             else
-                errorLog.Text = output + "\n" + errorLog.Text;
+                errorLog.Text = $"({_logEntries:00}) : {output}\n{errorLog.Text}";
 
             errorLog.Render();
+            _logEntries++;
         }
 
         private static void CharAtPosition(char output, int x, int y)

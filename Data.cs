@@ -1,4 +1,5 @@
 ﻿using Articles;
+using System.Collections;
 using System.Runtime.InteropServices;
 
 namespace Digital_Storefront
@@ -19,12 +20,88 @@ namespace Digital_Storefront
         public const string printsFilename = @"Data\Prints.txt";
         public const string mugsFilename = @"Data\Mugs.txt";
         public const string tshirtsFilename = @"Data\T-shirts.txt";
-        
+
+        private static readonly Random random = new();
+
         private static string[] prints = Array.Empty<string>();
         private static readonly List<TShirt> tshirts = new();
         private static readonly List<Mug> mugs = new();
+        private static (
+            (int Print, int Type, int Total) Mugs,
+            (int Print, int Size, int Fabric, int Total) TShirts,
+            int Price
+            ) ColumnLengths;
+        private const int columnLengthAverageScore = 4;
+        private const int columnPadding = 2;
 
-        private static readonly Random random = new();
+        public static string GetMugsAsColumns(bool sort = false, bool ascending = false)
+        {
+            int extraPadding = 0;
+
+            if (ColumnLengths.Mugs.Total == 0 || ColumnLengths.TShirts.Total == 0)
+                ColumnLengthSummation();
+
+            if (ColumnLengths.Mugs.Total < ColumnLengths.TShirts.Total)
+                extraPadding = ColumnLengths.TShirts.Total - ColumnLengths.Mugs.Total;
+
+            List<Mug> sortableList = new(mugs);
+
+            if (sort)
+            {
+                if (ascending)
+                    sortableList.Sort();
+                else
+                    sortableList.Sort(Mug.CompareByAvgScoreDescending());
+            }
+
+            string data = string.Empty;
+
+            foreach (Mug mug in sortableList)
+            {
+                data += mug.ToString(
+                    ColumnLengths.Mugs.Print,
+                    ColumnLengths.Price,
+                    ColumnLengths.Mugs.Type,
+                    columnLengthAverageScore, columnPadding, extraPadding) + "\n";
+            }
+
+            return data;
+        }
+
+        public static string GetTShirtsAsColumns(bool sort = false, bool ascending = false)
+        {
+            int extraPadding = 0;
+
+            if(ColumnLengths.TShirts.Total == 0 || ColumnLengths.Mugs.Total == 0)
+                ColumnLengthSummation();
+
+            if (ColumnLengths.TShirts.Total < ColumnLengths.Mugs.Total)
+                extraPadding = ColumnLengths.Mugs.Total - ColumnLengths.TShirts.Total;
+
+            List<TShirt> sortableList = new(tshirts);
+
+            if (sort)
+            {
+                if (ascending)
+                    sortableList.Sort();
+                else
+                    sortableList.Sort(Mug.CompareByAvgScoreDescending());
+            }
+
+            string data = string.Empty;
+
+            foreach (TShirt tshirt in sortableList)
+            {
+                data += tshirt.ToString(
+                    ColumnLengths.TShirts.Print,
+                    ColumnLengths.Price,
+                    ColumnLengths.TShirts.Size,
+                    ColumnLengths.TShirts.Fabric,
+                    columnLengthAverageScore, columnPadding, extraPadding) + "\n";
+            }
+
+            return data;
+        }
 
         public static bool GenerateMugs()
         {
@@ -50,6 +127,15 @@ namespace Digital_Storefront
                             avgScore /= numberOfReviews;
 
                         mugs.Add(new Mug(print, price, (Mug.Types)typeIndex, avgScore));
+
+                        if (print.Length > ColumnLengths.Mugs.Print)
+                            ColumnLengths.Mugs.Print = print.Length;
+                        
+                        if ($"{price:C2}".Length > ColumnLengths.Price)
+                            ColumnLengths.Price = $"{price:C2}".Length;
+
+                        if ($"{(Mug.Types)typeIndex}".Length > ColumnLengths.Mugs.Type)
+                            ColumnLengths.Mugs.Type = $"{(Mug.Types)typeIndex}".Length;
                     }
                 }
 
@@ -94,6 +180,18 @@ namespace Digital_Storefront
                                 avgScore /= numberOfReviews;
 
                             tshirts.Add(new TShirt(print, price, (TShirt.Sizes)sizeIndex, (TShirt.Fabrics)fabricIndex, avgScore));
+
+                            if (print.Length > ColumnLengths.TShirts.Print)
+                                ColumnLengths.TShirts.Print = print.Length;
+
+                            if ($"{price:C2}".Length > ColumnLengths.Price)
+                                ColumnLengths.Price = $"{price:C2}".Length;
+
+                            if ($"{(TShirt.Sizes)sizeIndex}".Length > ColumnLengths.TShirts.Size)
+                                ColumnLengths.TShirts.Size = $"{(TShirt.Sizes)sizeIndex}".Length;
+
+                            if ($"{(TShirt.Fabrics)fabricIndex}".Length > ColumnLengths.TShirts.Fabric)
+                                ColumnLengths.TShirts.Fabric = $"{(TShirt.Fabrics)fabricIndex}".Length;
                         }
                     }
                 }
@@ -180,6 +278,15 @@ namespace Digital_Storefront
                         throw new FormatException($"Malformed string in {mugsFilename} on line {lineNumber}. Value 4 is not a float.");
 
                     mugs.Add(new Mug(print, price, type, avgScore));
+
+                    if (print.Length > ColumnLengths.Mugs.Print)
+                        ColumnLengths.Mugs.Print = print.Length;
+
+                    if ($"{price:C2}".Length > ColumnLengths.Price)
+                        ColumnLengths.Price = $"{price:C2}".Length;
+
+                    if ($"{type}".Length > ColumnLengths.Mugs.Type)
+                        ColumnLengths.Mugs.Type = $"{type}".Length;
                 }
 
                 return true;
@@ -233,6 +340,18 @@ namespace Digital_Storefront
                         throw new FormatException($"Malformed string in {tshirtsFilename} on line {lineNumber}. Value 5 is not a float.");
 
                     tshirts.Add(new TShirt(print, price, size, fabric, avgScore));
+
+                    if (print.Length > ColumnLengths.TShirts.Print)
+                        ColumnLengths.TShirts.Print = print.Length;
+
+                    if ($"{price:C2}".Length > ColumnLengths.Price)
+                        ColumnLengths.Price = $"{price:C2}".Length;
+                    
+                    if ($"{size}".Length > ColumnLengths.TShirts.Size)
+                        ColumnLengths.TShirts.Size = $"{size}".Length;
+
+                    if ($"{fabric}".Length > ColumnLengths.TShirts.Fabric)
+                        ColumnLengths.TShirts.Fabric = $"{fabric}".Length;
                 }
 
                 return true;
@@ -240,6 +359,22 @@ namespace Digital_Storefront
 
             return false;
         }
+
+        private static void ColumnLengthSummation()
+        {
+            ColumnLengths.Mugs.Total =
+                    ColumnLengths.Mugs.Print + columnPadding +
+                    ColumnLengths.Mugs.Type + columnPadding +
+                    columnLengthAverageScore + columnPadding +
+                    ColumnLengths.Price + columnPadding;
+
+            ColumnLengths.TShirts.Total = ColumnLengths.TShirts.Print + columnPadding +
+                ColumnLengths.TShirts.Fabric + columnPadding +
+                ColumnLengths.TShirts.Size + columnPadding +
+                columnLengthAverageScore + columnPadding +
+                ColumnLengths.Price + columnPadding;
+        }
+
         /*private static List<string> SplitLine(string line)
         {
             List<string> values = new();
