@@ -31,8 +31,41 @@ namespace Digital_Storefront
             (int Print, int Size, int Fabric, int Total) TShirts,
             int Price
             ) ColumnLengths;
-        private const int columnLengthAverageScore = 4;
+        private const int columnLengthAverageScore = 6;
         private const int columnPadding = 2;
+
+        public static string GetMugsHeaders()
+        {
+            int extraPadding = 0;
+
+            if (ColumnLengths.Mugs.Total == 0 || ColumnLengths.TShirts.Total == 0)
+                ColumnLengthSummation();
+
+            if (ColumnLengths.Mugs.Total < ColumnLengths.TShirts.Total)
+                extraPadding = ColumnLengths.TShirts.Total - ColumnLengths.Mugs.Total;
+
+            return "PRINT".PadRight(ColumnLengths.Mugs.Print + columnPadding) +
+                "TYPE".PadRight(ColumnLengths.Mugs.Type + columnPadding) +
+                "RATING".PadLeft(extraPadding + columnPadding + columnLengthAverageScore) +
+                "PRICE".PadLeft(ColumnLengths.Price + columnPadding);
+        }
+
+        public static string GetTShirtsHeaders()
+        {
+            int extraPadding = 0;
+
+            if (ColumnLengths.Mugs.Total == 0 || ColumnLengths.TShirts.Total == 0)
+                ColumnLengthSummation();
+
+            if (ColumnLengths.TShirts.Total < ColumnLengths.Mugs.Total)
+                extraPadding = ColumnLengths.Mugs.Total - ColumnLengths.TShirts.Total;
+
+            return "PRINT".PadRight(ColumnLengths.TShirts.Print + columnPadding) +
+                "FABRIC".PadRight(ColumnLengths.TShirts.Fabric + columnPadding) +
+                "SIZE".PadRight(ColumnLengths.TShirts.Size + columnPadding) +
+                "RATING".PadLeft(extraPadding + columnPadding + columnLengthAverageScore) +
+                "PRICE".PadLeft(ColumnLengths.Price + columnPadding);
+        }
 
         public static string GetMugsAsColumns(bool sort = false, bool ascending = false)
         {
