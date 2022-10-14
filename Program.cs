@@ -18,7 +18,7 @@ namespace Digital_Storefront
             DrawGUI();
             CreateContent();
 
-            GUI.PrintInfo("'Tab' lets you switch between GUI elements and the arrow keys scroll them up and down.");
+            GUI.PrintInfo("Left and right arrow keys let you switch between textboxes, and up and down scroll through items.");
             GUI.PrintInfo("Press 'Q' to quit. 'Page Down' and 'Page Up' to scroll through this log. :)");
             GUI.ControlTextboxes();
         }
@@ -62,7 +62,6 @@ namespace Digital_Storefront
             GUI.CreateTextbox(27, 7, 75, 1, Data.slogan, ConsoleColor.DarkBlue, ConsoleColor.Yellow);
             GUI.CreateTextbox(GUI.GetGUIWidth - 27, GUI.GetGUIHeight - 5, 25, 4, Data.name + "\n" + Data.addressBilling, ConsoleColor.DarkBlue, ConsoleColor.Yellow);
 
-            // TODO: Möjlighet att "markera" individuella rader istället för att bara scrolla textboxarna. Kan användas som meny!
             GUI.CreateTextbox(2, 11, 62, 2, "MUGS\n" + Data.GetMugsHeaders(), ConsoleColor.DarkGray, ConsoleColor.White);
             GUI.CreateTextbox(2, 13, 62, GUI.GetGUIHeight - 22, Data.GetMugsAsColumns(true, true), null, null, GUI.Interactable.Yes);
             GUI.CreateTextbox(GUI.GetGUIWidth - 64, 11, 62, 2, "T-SHIRTS\n" + Data.GetTShirtsHeaders(), ConsoleColor.DarkGray, ConsoleColor.White);

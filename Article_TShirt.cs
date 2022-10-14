@@ -25,11 +25,11 @@ namespace Articles
         public Sizes Size { get => _size; }
         public Fabrics Fabric { get => _fabric; }
 
-        public TShirt()
-        {
-            _size = Sizes.Null;
-            _fabric = Fabrics.Null;
-        }
+        //public TShirt()
+        //{
+        //    _size = Sizes.Null;
+        //    _fabric = Fabrics.Null;
+        //}
 
         public TShirt(string print, decimal price, Sizes size, Fabrics fabric, float avgScore)
         {

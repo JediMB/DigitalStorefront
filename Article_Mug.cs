@@ -17,10 +17,10 @@ namespace Articles
 
         public Types Type { get => _type; }
 
-        public Mug()
-        {
-            _type = Types.Null;
-        }
+        //public Mug()
+        //{
+        //    _type = Types.Null;
+        //}
 
         public Mug(string print, decimal price, Types type, float avgScore)
         {

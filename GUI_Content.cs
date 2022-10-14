@@ -5,7 +5,7 @@ namespace ConsoleGUI
 {
     public static partial class GUI
     {
-        private static readonly TextBox errorLog = new(0, 0, _guiWidth, 1, string.Empty, ConsoleColor.Black, ConsoleColor.White);
+        private static readonly TextBox errorLog = new(0, 0, _guiWidth, 1, 0, string.Empty, ConsoleColor.Black, ConsoleColor.White);
         private static readonly List<TextBox> textFields = new();
         private static readonly List<TextBox> textBoxes = new();
         private static byte textBoxSelection = 0;
@@ -26,6 +26,7 @@ namespace ConsoleGUI
             private string      textFull;
             private string[]    textFormatted;
             private int startLine;
+            private int selectedLine;
 
             private readonly ConsoleColor bgColor;
             private readonly ConsoleColor textColor;
@@ -41,7 +42,7 @@ namespace ConsoleGUI
                 get => textFull;
             }
 
-            public TextBox(int left, int top, int width, int height, string text = "", ConsoleColor bgColor = _guiColor, ConsoleColor textColor = _guiTextColor)
+            public TextBox(int left, int top, int width, int height, int selectedLine, string text = "", ConsoleColor bgColor = _guiColor, ConsoleColor textColor = _guiTextColor)
             {
                 this.left = left;
                 this.top = top;
@@ -51,6 +52,7 @@ namespace ConsoleGUI
                 this.textFull = text;
                 this.textFormatted = FormatText(textFull, width);
                 this.startLine = 0;
+                this.selectedLine = selectedLine;
 
                 this.bgColor = bgColor;
                 this.textColor = textColor;
@@ -129,6 +131,26 @@ namespace ConsoleGUI
                 textOut = string.Empty;
             }
 
+            public void PrevLine()
+            {
+                if (selectedLine > 0)
+                    selectedLine--;
+                else
+                    ScrollUp();
+
+                Render();
+            }
+
+            public void NextLine()
+            {
+                if (selectedLine < height - 1)
+                    selectedLine++;
+                else
+                    ScrollDown();
+
+                Render();
+            }
+
             public void ScrollUp()
             {
                 if (textFormatted.Length > height)
@@ -138,8 +160,6 @@ namespace ConsoleGUI
                     if (startLine < 0)
                         startLine = 0;
                 }
-
-                Render();
             }
 
             public void ScrollDown()
@@ -151,8 +171,6 @@ namespace ConsoleGUI
                     if (startLine > (textFormatted.Length - height))
                         startLine = textFormatted.Length - height;
                 }
-
-                Render();
             }
 
             public void Render()
@@ -165,8 +183,14 @@ namespace ConsoleGUI
                     if (i + startLine >= textFormatted.Length)
                         return;
 
+                    if (GUI.textBoxes.Count != 0 && i == selectedLine && this == textBoxes[GUI.textBoxSelection])
+                        (Console.BackgroundColor, Console.ForegroundColor) = (Console.ForegroundColor, Console.BackgroundColor);
+
                     Console.SetCursorPosition(left, top + i);
                     Console.Write(textFormatted[i + startLine]);
+
+                    if (GUI.textBoxes.Count != 0 && i == selectedLine && this == textBoxes[GUI.textBoxSelection])
+                        (Console.BackgroundColor, Console.ForegroundColor) = (Console.ForegroundColor, Console.BackgroundColor);
                 }
             }
         }
@@ -189,8 +213,9 @@ namespace ConsoleGUI
                     // Assigns default colors if none are provided
                     bgColor ??= _guiColor;
                     textColor ??= _guiTextColor;
+                    int selectedLine = (interactable == Interactable.Yes ? 0 : -1);
 
-                    TextBox textBox = new(left, top, width, height, text, bgColor.Value, textColor.Value);
+                    TextBox textBox = new(left, top, width, height, selectedLine ,text, bgColor.Value, textColor.Value);
 
                     textBox.Render();
 
@@ -218,7 +243,8 @@ namespace ConsoleGUI
                 if (textBoxSelection == byte.MaxValue)
                     textBoxSelection = (byte)(textBoxes.Count - 1);
 
-                textBoxes[textBoxSelection].Render();
+                foreach (TextBox textBox in textBoxes)
+                    textBox.Render();
             }
         }
 
@@ -231,7 +257,8 @@ namespace ConsoleGUI
                 if (textBoxSelection >= textBoxes.Count)
                     textBoxSelection = 0;
 
-                textBoxes[textBoxSelection].Render();
+                foreach (TextBox textBox in textBoxes)
+                    textBox.Render();
             }
         }
 
@@ -239,35 +266,48 @@ namespace ConsoleGUI
         {
             ConsoleKeyInfo keyInfo;
 
+            if (textBoxes.Count > 0)
+                textBoxes[0].Render();
+
             while ((keyInfo = Console.ReadKey(true)).Key != ConsoleKey.Q)
             {
                 switch (keyInfo.Key)
                 {
-                    case ConsoleKey.Tab:
-                        if ((keyInfo.Modifiers & ConsoleModifiers.Shift) != 0)
-                        {
-                            PrevTextbox();
-                            break;
-                        }
-                        NextTextbox();
-                        break;
+                    //case ConsoleKey.Tab:
+                    //    if ((keyInfo.Modifiers & ConsoleModifiers.Shift) != 0)
+                    //    {
+                    //        PrevTextbox();
+                    //        break;
+                    //    }
+                    //    NextTextbox();
+                    //    break;
 
                     case ConsoleKey.PageUp:
                         errorLog.ScrollUp();
+                        errorLog.Render();
                         break;
 
                     case ConsoleKey.PageDown:
                         errorLog.ScrollDown();
+                        errorLog.Render();
                         break;
 
                     case ConsoleKey.UpArrow:
                         if (textBoxes.Count > 0)
-                            textBoxes[textBoxSelection].ScrollUp();
+                            textBoxes[textBoxSelection].PrevLine();
                         break;
 
                     case ConsoleKey.DownArrow:
                         if (textBoxes.Count > 0)
-                            textBoxes[textBoxSelection].ScrollDown();
+                            textBoxes[textBoxSelection].NextLine();
+                        break;
+
+                    case ConsoleKey.LeftArrow:
+                        PrevTextbox();
+                        break;
+
+                    case ConsoleKey.RightArrow:
+                        NextTextbox();
                         break;
                 }
             }
