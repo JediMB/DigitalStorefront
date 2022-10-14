@@ -17,7 +17,7 @@ namespace Digital_Storefront
             DrawGUI();
             CreateContent();
 
-            GUI.PrintInfo("Press enter/return to 'add' and item to your cart.");
+            GUI.PrintInfo("Press enter/return to 'add' an item to your cart.");
             GUI.PrintInfo("Left and right arrow keys let you switch between textboxes, and up and down scroll through items.");
             GUI.PrintInfo("Press 'Q' to quit. 'Page Down' and 'Page Up' to scroll through this log. :)");
             GUI.ControlTextboxes();
