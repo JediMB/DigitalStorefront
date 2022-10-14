@@ -17,8 +17,8 @@
             _averageReviewScore = -1;
         }
 
-        int IComparable<Article>.CompareTo(Article? article)
-        {
+        int IComparable<Article>.CompareTo(Article? article)    // Thursday afternoon (Oct 13), I had to figure out how to code *generalized* comparison methods
+        {                                                       // Friday afternoon, I'd thoroughly explained it to two others. Hooray.
             if (article != null)
             {
                 int scoreComparison = _averageReviewScore.CompareTo(article._averageReviewScore);

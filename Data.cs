@@ -16,6 +16,10 @@ namespace Digital_Storefront
         public const string slogan = "For when you really want a coffee cup with someone else's stolen art on it.";
         public const string addressStore = "1337 Ave Avenue\nYour Town Here, XX\n35199-0753\nFantasyland";
         public const string addressBilling = "PO Box 1984\nSome Other Town, XX\nFantasyland";
+        public const string copyright = "(c) Copyright 2022, M Berntson";
+        private static int itemsInCart = 0;
+
+        public static int ItemsInCart { get => itemsInCart; set => itemsInCart = value; }
 
         public const string printsFilename = @"Data\Prints.txt";
         public const string mugsFilename = @"Data\Mugs.txt";
@@ -34,6 +38,9 @@ namespace Digital_Storefront
         private const int columnLengthAverageScore = 6;
         private const int columnPadding = 2;
 
+        /// <summary>
+        /// Generates a formatted header row for the mug list. Was a late addition and might not hold up to environmental changes.
+        /// </summary>
         public static string GetMugsHeaders()
         {
             int extraPadding = 0;
@@ -44,12 +51,15 @@ namespace Digital_Storefront
             if (ColumnLengths.Mugs.Total < ColumnLengths.TShirts.Total)
                 extraPadding = ColumnLengths.TShirts.Total - ColumnLengths.Mugs.Total;
 
-            return "PRINT".PadRight(ColumnLengths.Mugs.Print + columnPadding) +
-                "TYPE".PadRight(ColumnLengths.Mugs.Type + columnPadding) +
-                "RATING".PadLeft(extraPadding + columnPadding + columnLengthAverageScore) +
+            return " PRINT".PadRight(ColumnLengths.Mugs.Print + columnPadding) +
+                " TYPE".PadRight(ColumnLengths.Mugs.Type + columnPadding) +
+                "RATING".PadLeft(extraPadding + columnPadding + columnLengthAverageScore + 1) +
                 "PRICE".PadLeft(ColumnLengths.Price + columnPadding);
         }
 
+        /// <summary>
+        /// Generates a formatted header row for the t-shirt list. Was a late addition and might not hold up to environmental changes.
+        /// </summary>
         public static string GetTShirtsHeaders()
         {
             int extraPadding = 0;
@@ -60,13 +70,16 @@ namespace Digital_Storefront
             if (ColumnLengths.TShirts.Total < ColumnLengths.Mugs.Total)
                 extraPadding = ColumnLengths.Mugs.Total - ColumnLengths.TShirts.Total;
 
-            return "PRINT".PadRight(ColumnLengths.TShirts.Print + columnPadding) +
-                "FABRIC".PadRight(ColumnLengths.TShirts.Fabric + columnPadding) +
-                "SIZE".PadRight(ColumnLengths.TShirts.Size + columnPadding) +
-                "RATING".PadLeft(extraPadding + columnPadding + columnLengthAverageScore) +
+            return " PRINT".PadRight(ColumnLengths.TShirts.Print + columnPadding) +
+                " FABRIC".PadRight(ColumnLengths.TShirts.Fabric + columnPadding) +
+                " SIZE".PadRight(ColumnLengths.TShirts.Size + columnPadding) +
+                "RATING".PadLeft(extraPadding + columnPadding + columnLengthAverageScore + 1) +
                 "PRICE".PadLeft(ColumnLengths.Price + columnPadding);
         }
 
+        /// <summary>
+        /// Generates a string of mugs formatted into columns, for insertion into a scrollable textbox.
+        /// </summary>
         public static string GetMugsAsColumns(bool sort = false, bool ascending = false)
         {
             int extraPadding = 0;
@@ -101,6 +114,9 @@ namespace Digital_Storefront
             return data;
         }
 
+        /// <summary>
+        /// Generates a string of t-shirts formatted into columns, for insertion into a scrollable textbox.
+        /// </summary>
         public static string GetTShirtsAsColumns(bool sort = false, bool ascending = false)
         {
             int extraPadding = 0;
@@ -136,6 +152,9 @@ namespace Digital_Storefront
             return data;
         }
 
+        /// <summary>
+        /// Generates a series of mug variants for each available print
+        /// </summary>
         public static bool GenerateMugs()
         {
             LoadPrintsFromFile();
@@ -161,6 +180,8 @@ namespace Digital_Storefront
 
                         mugs.Add(new Mug(print, price, (Mug.Types)typeIndex, avgScore));
 
+
+                        // Generates column data later used for formatting
                         if (print.Length > ColumnLengths.Mugs.Print)
                             ColumnLengths.Mugs.Print = print.Length;
                         
@@ -185,6 +206,9 @@ namespace Digital_Storefront
             return false;
         }
 
+        /// <summary>
+        /// Generates a series of t-shirt variants for each available print
+        /// </summary>
         public static bool GenerateTShirts()
         {
             LoadPrintsFromFile();
@@ -214,6 +238,8 @@ namespace Digital_Storefront
 
                             tshirts.Add(new TShirt(print, price, (TShirt.Sizes)sizeIndex, (TShirt.Fabrics)fabricIndex, avgScore));
 
+
+                            // Generates column data later used for formatting
                             if (print.Length > ColumnLengths.TShirts.Print)
                                 ColumnLengths.TShirts.Print = print.Length;
 
@@ -242,6 +268,9 @@ namespace Digital_Storefront
             return false;
         }
 
+        /// <summary>
+        /// Loads all the prints from the included text file
+        /// </summary>
         private static bool LoadPrintsFromFile()
         {
             if (prints.Length == 0)
@@ -269,6 +298,9 @@ namespace Digital_Storefront
             return false;
         }
 
+        /// <summary>
+        /// If it exists, loads all the mugs from the generated text file. Otherwise returns false;
+        /// </summary>
         public static bool LoadMugsFromFile()
         {
             if (File.Exists(mugsFilename))
@@ -312,6 +344,8 @@ namespace Digital_Storefront
 
                     mugs.Add(new Mug(print, price, type, avgScore));
 
+
+                    // Generates column data later used for formatting
                     if (print.Length > ColumnLengths.Mugs.Print)
                         ColumnLengths.Mugs.Print = print.Length;
 
@@ -328,6 +362,9 @@ namespace Digital_Storefront
             return false;
         }
 
+        /// <summary>
+        /// If it exists, loads all the t-shirts from the generated text file. Otherwise returns false;
+        /// </summary>
         public static bool LoadTShirtsFromFile()
         {
             if (File.Exists(tshirtsFilename))
@@ -374,6 +411,8 @@ namespace Digital_Storefront
 
                     tshirts.Add(new TShirt(print, price, size, fabric, avgScore));
 
+
+                    // Generates column data later used for formatting
                     if (print.Length > ColumnLengths.TShirts.Print)
                         ColumnLengths.TShirts.Print = print.Length;
 
@@ -393,6 +432,9 @@ namespace Digital_Storefront
             return false;
         }
 
+        /// <summary>
+        /// Adds upp the total row lengths from columns and padding. Used to give the mug and t-shirt lists equal width through extra padding.
+        /// </summary>
         private static void ColumnLengthSummation()
         {
             ColumnLengths.Mugs.Total =
@@ -407,31 +449,5 @@ namespace Digital_Storefront
                 columnLengthAverageScore + columnPadding +
                 ColumnLengths.Price + columnPadding;
         }
-
-        /*private static List<string> SplitLine(string line)
-        {
-            List<string> values = new();
-            int wordIndex = 0;
-
-            for (int i = 0; i < line.Length; i++)
-            {
-                if (line[i] == ';')
-                {
-                    values.Add(line[wordIndex..i]);
-
-                    if (string.IsNullOrEmpty(values[^1]))
-                        throw new FormatException($"Value {values.Count} missing.");
-
-                    wordIndex = i + 1;
-                }
-            }
-
-            values.Add(line[wordIndex..]);
-
-            if (string.IsNullOrEmpty(values[^1]))
-                throw new FormatException($"Value {values.Count} missing.");
-
-            return values;
-        }*/
     }
 }
