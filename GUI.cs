@@ -14,6 +14,7 @@ namespace ConsoleGUI
         private static int _logEntries = 0;
         private const ConsoleColor _guiColor = ConsoleColor.Gray;
         private const ConsoleColor _guiTextColor = ConsoleColor.Black;
+        private const ConsoleColor _guiInactiveColor = ConsoleColor.DarkGray;
 
         private const string _lineH = "─═";
         private const string _lineV = "│║";
@@ -64,6 +65,9 @@ namespace ConsoleGUI
         public static int GetGUIWidth { get => _guiWidth; }
         public static int GetGUIHeight { get => _guiHeight; }
 
+        /// <summary>
+        /// Sets up necessary console settings for the application and its GUI.
+        /// </summary>
         public static void Initialize(string windowTitle)
         {
             Console.BufferWidth = GetGUIWidth;
@@ -96,7 +100,9 @@ namespace ConsoleGUI
         [DllImport("kernel32.dll", ExactSpelling = true)]
         private static extern IntPtr GetConsoleWindow();
 
-        
+        /// <summary>
+        /// Adds text to the textbox at the top of the console. Useful for error messages, instructions, etc.
+        /// </summary>
         public static void PrintInfo(string output)
         {
             if (errorLog.Text == string.Empty)

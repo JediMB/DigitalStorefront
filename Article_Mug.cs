@@ -17,11 +17,6 @@ namespace Articles
 
         public Types Type { get => _type; }
 
-        //public Mug()
-        //{
-        //    _type = Types.Null;
-        //}
-
         public Mug(string print, decimal price, Types type, float avgScore)
         {
             _print = print;
@@ -37,10 +32,11 @@ namespace Articles
 
         public string ToString(int printWidth, int priceWidth, int typeWidth, int scoreWidth, int padding = 0, int extraPadding = 0)
         {
-            return _print.PadRight(printWidth + padding) +
+            return " " + _print.PadRight(printWidth + padding) +
                 $"{_type}".PadRight(typeWidth + padding) +
                 $"{_averageReviewScore:F1}".PadLeft(padding + extraPadding + scoreWidth) +
-                $"{_price:C2}".PadLeft(padding + priceWidth);
+                $"{_price:C2}".PadLeft(padding + priceWidth) +
+                " ░"; // These two characters at the end are a hack for the scrollbar. :(
         }
     }
 }

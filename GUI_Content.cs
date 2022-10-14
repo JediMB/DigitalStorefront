@@ -1,11 +1,13 @@
-﻿using System.Reflection.Metadata.Ecma335;
+﻿using Digital_Storefront;
+using System.Reflection.Metadata.Ecma335;
 using static System.Net.Mime.MediaTypeNames;
 
 namespace ConsoleGUI
 {
     public static partial class GUI
     {
-        private static readonly TextBox errorLog = new(0, 0, _guiWidth, 1, 0, string.Empty, ConsoleColor.Black, ConsoleColor.White);
+        private static readonly TextBox errorLog = new(0, 0, _guiWidth, 1, -1, string.Empty, ConsoleColor.Black, ConsoleColor.White);
+        private static readonly TextBox cartNumber = new(3, GUI.GetGUIHeight - 3, 2, 1, -1, "00", ConsoleColor.Yellow, ConsoleColor.DarkBlue);
         private static readonly List<TextBox> textFields = new();
         private static readonly List<TextBox> textBoxes = new();
         private static byte textBoxSelection = 0;
@@ -30,19 +32,24 @@ namespace ConsoleGUI
 
             private readonly ConsoleColor bgColor;
             private readonly ConsoleColor textColor;
+            private readonly ConsoleColor inactiveColor;
 
+            /// <summary>
+            /// Gets and sets the text of a textbox, and also formats the text to properly fit into the box.
+            /// </summary>
             public string Text
             {
                 set
                 {
                     textFull = value;
                     textFormatted = FormatText(textFull, width);
+                    Render();
                 }
 
                 get => textFull;
             }
 
-            public TextBox(int left, int top, int width, int height, int selectedLine, string text = "", ConsoleColor bgColor = _guiColor, ConsoleColor textColor = _guiTextColor)
+            public TextBox(int left, int top, int width, int height, int selectedLine, string text = "", ConsoleColor bgColor = _guiColor, ConsoleColor textColor = _guiTextColor, ConsoleColor inactiveColor = _guiInactiveColor)
             {
                 this.left = left;
                 this.top = top;
@@ -56,8 +63,12 @@ namespace ConsoleGUI
 
                 this.bgColor = bgColor;
                 this.textColor = textColor;
+                this.inactiveColor = inactiveColor;
             }
 
+            /// <summary>
+            /// Handles formatting of a text string to fit within a block of the specified width.
+            /// </summary>
             private static string[] FormatText(string text, int width)
             {
                 if (string.IsNullOrWhiteSpace(text))
@@ -83,6 +94,9 @@ namespace ConsoleGUI
                 return lines.ToArray();
             }
 
+            /// <summary>
+            /// Identifies at what point to split a line in order to fit it into a textbox.
+            /// </summary>
             private static void SplitText(Queue<string> lines, string textIn, out string textOut, int maxLength)
             {
                 for (int i = 0; i <= maxLength && i < textIn.Length; i++)
@@ -131,6 +145,9 @@ namespace ConsoleGUI
                 textOut = string.Empty;
             }
 
+            /// <summary>
+            /// Moves the selection one line up in the current textbox. Scrolls up if necessary.
+            /// </summary>
             public void PrevLine()
             {
                 if (selectedLine > 0)
@@ -141,6 +158,9 @@ namespace ConsoleGUI
                 Render();
             }
 
+            /// <summary>
+            /// Moves the selection one line down in the current textbox. Scrolls down if necessary.
+            /// </summary>
             public void NextLine()
             {
                 if (selectedLine < height - 1)
@@ -151,6 +171,10 @@ namespace ConsoleGUI
                 Render();
             }
 
+
+            /// <summary>
+            /// Handles scrolling a textbox upwards.
+            /// </summary>
             public void ScrollUp()
             {
                 if (textFormatted.Length > height)
@@ -162,6 +186,9 @@ namespace ConsoleGUI
                 }
             }
 
+            /// <summary>
+            /// Handles scrolling a textbox downwards.
+            /// </summary>
             public void ScrollDown()
             {
                 if (textFormatted.Length > height)
@@ -173,28 +200,96 @@ namespace ConsoleGUI
                 }
             }
 
+
+            /// <summary>
+            /// Handles 'selection' of lines in a textbox, which currently means adding the items to your 'cart'.
+            /// </summary>
+            public void Select()
+            {
+                if (textFormatted[startLine + selectedLine][0] != '✓')
+                {
+                    textFormatted[startLine + selectedLine] = '✓' + textFormatted[startLine + selectedLine][1..];
+
+                    Data.ItemsInCart++;
+
+                    if (Data.ItemsInCart > 99)
+                        Data.ItemsInCart = 99;
+
+                    cartNumber.Text = $"{Data.ItemsInCart:00}";
+                    Render();
+                }
+            }
+
+
+            /// <summary>
+            /// Renders all the visible text lines in a textbox
+            /// </summary>
             public void Render()
             {
                 Console.BackgroundColor = bgColor;
                 Console.ForegroundColor = textColor;
+
+                // Calculations used for moving the scrollbar
+                float scrollPercentage = ((float)startLine + height / 2) / (float)textFormatted.Length;
+                int scrollbarPosition = 1 + (int)((height - 2) * scrollPercentage);
 
                 for (int i = 0; i < height; i++)
                 {
                     if (i + startLine >= textFormatted.Length)
                         return;
 
-                    if (GUI.textBoxes.Count != 0 && i == selectedLine && this == textBoxes[GUI.textBoxSelection])
-                        (Console.BackgroundColor, Console.ForegroundColor) = (Console.ForegroundColor, Console.BackgroundColor);
+                    // This handles showing what line you have marked
+                    if (GUI.textBoxes.Count != 0 && i == selectedLine) {
+                        if (this == textBoxes[GUI.textBoxSelection])    // Different colors depending on if it's the active textbox or not
+                            (Console.BackgroundColor, Console.ForegroundColor) = (textColor, bgColor);
+                        else
+                            (Console.BackgroundColor, Console.ForegroundColor) = (inactiveColor, textColor);
+                    }
 
                     Console.SetCursorPosition(left, top + i);
                     Console.Write(textFormatted[i + startLine]);
 
-                    if (GUI.textBoxes.Count != 0 && i == selectedLine && this == textBoxes[GUI.textBoxSelection])
-                        (Console.BackgroundColor, Console.ForegroundColor) = (Console.ForegroundColor, Console.BackgroundColor);
+                    // This scrollbar code was hacked in at the very end. Would have preferred to have it more robustly implemented in the textbox code, but... time.
+                    if (selectedLine != -1)
+                    {
+                        if (i == 0 && startLine > 0)
+                        {
+                            Console.BackgroundColor = bgColor;
+                            Console.ForegroundColor = textColor;
+                            Console.CursorLeft--;
+                            Console.Write("▲");
+                        }
+                        else if (i == scrollbarPosition || startLine == 0 || startLine == textFormatted.Length - height)
+                        {
+                            if (startLine == 0)
+                                Console.CursorTop = top + 1;
+                            else if (startLine == textFormatted.Length - height)
+                                Console.CursorTop = (top + height) - 2;
+
+                            Console.CursorLeft--;
+                            Console.BackgroundColor = bgColor;
+                            Console.ForegroundColor = textColor;
+                            Console.Write("█");
+                        }
+                        else if (i == height - 1 && startLine + height < textFormatted.Length)
+                        {
+                            Console.BackgroundColor = bgColor;
+                            Console.ForegroundColor = textColor;
+                            Console.CursorLeft--;
+                            Console.Write("▼");
+                        }
+                    }
+
+                    // Restores console colors in case they've been changed by line selection code
+                    Console.BackgroundColor = bgColor;
+                    Console.ForegroundColor = textColor;
                 }
             }
         }
 
+        /// <summary>
+        /// Creates a textbox and adds it to the textBoxes or textFields lists, depending on if it's set as interactable or not
+        /// </summary>
         public static void CreateTextbox(int left, int top, int width, int height, string text = "",
             ConsoleColor? bgColor = null, ConsoleColor? textColor = null, Interactable interactable = Interactable.No)
         {
@@ -234,6 +329,10 @@ namespace ConsoleGUI
             }
         }
 
+
+        /// <summary>
+        /// Switches focus and controls to the previous item in the textBoxes list.
+        /// </summary>
         private static void PrevTextbox()
         {
             if (textBoxes.Count != 0)
@@ -248,6 +347,9 @@ namespace ConsoleGUI
             }
         }
 
+        /// <summary>
+        /// Switches focus and controls to the next item in the textBoxes list.
+        /// </summary>
         private static void NextTextbox()
         {
             if (textBoxes.Count != 0)
@@ -262,6 +364,9 @@ namespace ConsoleGUI
             }
         }
 
+        /// <summary>
+        /// Handles all user input, which is primarily about manipulating textboxes.
+        /// </summary>
         public static void ControlTextboxes()
         {
             ConsoleKeyInfo keyInfo;
@@ -273,15 +378,6 @@ namespace ConsoleGUI
             {
                 switch (keyInfo.Key)
                 {
-                    //case ConsoleKey.Tab:
-                    //    if ((keyInfo.Modifiers & ConsoleModifiers.Shift) != 0)
-                    //    {
-                    //        PrevTextbox();
-                    //        break;
-                    //    }
-                    //    NextTextbox();
-                    //    break;
-
                     case ConsoleKey.PageUp:
                         errorLog.ScrollUp();
                         errorLog.Render();
@@ -308,6 +404,11 @@ namespace ConsoleGUI
 
                     case ConsoleKey.RightArrow:
                         NextTextbox();
+                        break;
+
+                    case ConsoleKey.Enter:
+                        if (textBoxes.Count > 0)
+                            textBoxes[textBoxSelection].Select();
                         break;
                 }
             }

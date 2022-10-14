@@ -25,12 +25,6 @@ namespace Articles
         public Sizes Size { get => _size; }
         public Fabrics Fabric { get => _fabric; }
 
-        //public TShirt()
-        //{
-        //    _size = Sizes.Null;
-        //    _fabric = Fabrics.Null;
-        //}
-
         public TShirt(string print, decimal price, Sizes size, Fabrics fabric, float avgScore)
         {
             _print = print;
@@ -47,11 +41,12 @@ namespace Articles
 
         public string ToString(int printWidth, int priceWidth, int sizeWidth, int fabricWidth, int scoreWidth, int padding = 0, int extraPadding = 0)
         {
-            return _print.PadRight(printWidth + padding) +
+            return " " + _print.PadRight(printWidth + padding) +
                 $"{_fabric}".PadRight(fabricWidth + padding) +
                 $"{_size}".PadRight(sizeWidth + padding) +
                 $"{_averageReviewScore:F1}".PadLeft(padding + extraPadding + scoreWidth) +
-                $"{_price:C2}".PadLeft(padding + priceWidth);
+                $"{_price:C2}".PadLeft(padding + priceWidth) +
+                " ░"; // These two characters at the end are a hack for the scrollbar. :(
         }
     }
 }
