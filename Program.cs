@@ -1,7 +1,6 @@
 ﻿using System.Runtime.Versioning;
 using Articles;
 using ConsoleGUI;
-using Humanizer;
 
 namespace Digital_Storefront
 {

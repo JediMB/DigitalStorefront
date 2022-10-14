@@ -7,7 +7,7 @@ namespace ConsoleGUI
     public static partial class GUI
     {
         private static readonly TextBox errorLog = new(0, 0, _guiWidth, 1, -1, string.Empty, ConsoleColor.Black, ConsoleColor.White);
-        private static readonly TextBox cartNumber = new(3, GUI.GetGUIHeight - 3, 2, 1, -1, "00", ConsoleColor.Yellow, ConsoleColor.DarkBlue);
+        private static readonly TextBox cartNumber = new(3, GUI.GetGUIHeight - 4, 2, 1, -1, "00", ConsoleColor.Yellow, ConsoleColor.DarkBlue);
         private static readonly List<TextBox> textFields = new();
         private static readonly List<TextBox> textBoxes = new();
         private static byte textBoxSelection = 0;
