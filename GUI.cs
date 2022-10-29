@@ -114,33 +114,47 @@ namespace ConsoleGUI
             _logEntries++;
         }
 
+        /// <summary>
+        /// Writes a single char at a the specified position in the console buffer
+        /// </summary>
         private static void CharAtPosition(char output, int x, int y)
         {
             Console.SetCursorPosition(x, y);
             Console.Write(output);
         }
 
-        public static void DrawLineZigzag(int startX, int y, int width, BorderStyle borderStyle = 0,
+        /// <summary>
+        /// Draws a zigzag pattern as a horizontal line
+        /// </summary>
+        /// <param name="startX">X position for the origin point</param>
+        /// <param name="topY">Y position for the top half of the line</param>
+        /// <param name="width">Width of the line</param>
+        /// <param name="borderStyle">Single or double-line border style</param>
+        /// <param name="zigzagStyle">Option to flip the zigzag pattern vertically</param>
+        /// <param name="straightEdge">To be deprecated? (Whether or not the ends of the line are straight rather than corners)</param>
+        /// <param name="bgColor">Background color</param>
+        /// <param name="textColor">Foreground/text color</param>
+        public static void DrawLineZigzag(int startX, int topY, int width, BorderStyle borderStyle = 0,
             ZigzagStyle zigzagStyle = ZigzagStyle.Regular, bool straightEdge = false, ConsoleColor? bgColor = null, ConsoleColor? textColor = null)
         {
             try
             {
                 // Throw an exception if a parameter value would lead to drawing outside the console buffer...
                 if (startX < 0 || startX > GetGUIWidth) throw new ArgumentOutOfRangeException(nameof(startX), "Origin point is beyond buffer bounds.");
-                if (y < 0 || y+1 > GetGUIHeight) throw new ArgumentOutOfRangeException(nameof(y), "Y position is beyond buffer bounds.");
+                if (topY < 0 || topY+1 > GetGUIHeight) throw new ArgumentOutOfRangeException(nameof(topY), "Y position is beyond buffer bounds.");
                 if (startX + width > GetGUIWidth) throw new ArgumentOutOfRangeException(nameof(startX) + "', '" + nameof(width), "Too long.");
                 // ...or if the specified size is too small for the element to be drawn properly
                 if (width < 2 /*4*/) throw new ArgumentOutOfRangeException(nameof(width), "Length can't be less than 2.");
                 //if (evenWidth % 2 != 0) throw new ArgumentException("Length must be an even number.", nameof(evenWidth));
 
-                y++; // Push GUI down from line 0
+                topY++; // Push GUI down from line 0
 
                 Console.BackgroundColor = bgColor ?? _guiColor;
                 Console.ForegroundColor = textColor ?? _guiTextColor;
 
                 int numberOfZags = width / 4;
                 int remainder = width % 4;      // can be 0, 1, 2, or *3* (standard)
-
+                // TODO: Improve the zigzags
                 string[] fragment = {
                     $"{_cornerTL[(int)borderStyle]}{_cornerTR[(int)borderStyle]}",
                     $"{_cornerBL[(int)borderStyle]}{_cornerBR[(int)borderStyle]}"
@@ -155,7 +169,7 @@ namespace ConsoleGUI
                 if (straightEdge)
                     line = _lineH[(int)borderStyle] + line[1..(line.Length-1)] + _lineH[(int)borderStyle];
 
-                Console.SetCursorPosition(startX, y + (int)zigzagStyle);
+                Console.SetCursorPosition(startX, topY + (int)zigzagStyle);
                 Console.Write(line);
 
                 line = string.Empty;
@@ -164,7 +178,7 @@ namespace ConsoleGUI
                 {
                     line += fragment[1 - (int)zigzagStyle];
                 }
-                Console.SetCursorPosition(startX + 1, y + 1 - (int)zigzagStyle);
+                Console.SetCursorPosition(startX + 1, topY + 1 - (int)zigzagStyle);
                 Console.WriteLine(line);
             }
             catch (ArgumentException ex)
@@ -173,6 +187,17 @@ namespace ConsoleGUI
             }
         }
 
+        /// <summary>
+        /// Draws a horizontal line
+        /// </summary>
+        /// <param name="startX">X position for the origin point</param>
+        /// <param name="y">Y position for the line</param>
+        /// <param name="width">Width of the line</param>
+        /// <param name="borderStyle">Single or double-line border style</param>
+        /// <param name="edgeStyleLeft">Sets the left-most char as a straight line or a junction</param>
+        /// <param name="edgeStyleRight">Sets the right-most char as a straight line or a junction</param>
+        /// <param name="bgColor">Background color</param>
+        /// <param name="textColor">Foreground/text color</param>
         public static void DrawLine(int startX, int y, int width, BorderStyle borderStyle = 0,
             EdgeStyle edgeStyleLeft = EdgeStyle.None, EdgeStyle edgeStyleRight = EdgeStyle.None,
             ConsoleColor? bgColor = null, ConsoleColor? textColor = null)
@@ -210,18 +235,29 @@ namespace ConsoleGUI
             }
         }
 
-        public static void DrawColumnZigzag(int x, int startY, int evenHeight, BorderStyle borderStyle = 0,
+        /// <summary>
+        /// Draws a zigzag pattern as a vertical column
+        /// </summary>
+        /// <param name="leftX">X position for the left-hand side of the column</param>
+        /// <param name="startY">Y position for the origin point</param>
+        /// <param name="height">Height of the column</param>
+        /// <param name="borderStyle">Single or double-line border style</param>
+        /// <param name="zigzagStyle">Option to mirror the zigzag pattern</param>
+        /// <param name="straightEdge">To be deprecated? (Whether or not the ends of the line are straight rather than corners)</param>
+        /// <param name="bgColor">Background color</param>
+        /// <param name="textColor">Foreground/text color</param>
+        public static void DrawColumnZigzag(int leftX, int startY, int height, BorderStyle borderStyle = 0,
             ZigzagStyle zigzagStyle = ZigzagStyle.Regular, bool straightEdge = false, ConsoleColor ? bgColor = null, ConsoleColor? textColor = null)
         {
             try
             {
                 // Throw an exception if a parameter value would lead to drawing outside the console buffer...
                 if (startY < 0 || startY > GetGUIHeight) throw new ArgumentOutOfRangeException(nameof(startY), "Origin point is beyond buffer bounds.");
-                if (x < 0 || x > GetGUIWidth) throw new ArgumentOutOfRangeException(nameof(x), "X position is beyond buffer bounds.");
-                if (startY + evenHeight > GetGUIHeight) throw new ArgumentOutOfRangeException(nameof(startY) + "', '" + nameof(evenHeight), "Too long.");
+                if (leftX < 0 || leftX > GetGUIWidth) throw new ArgumentOutOfRangeException(nameof(leftX), "X position is beyond buffer bounds.");
+                if (startY + height > GetGUIHeight) throw new ArgumentOutOfRangeException(nameof(startY) + "', '" + nameof(height), "Too long.");
                 // ...or if the specified size is too small for the element to be drawn properly
-                if (evenHeight < 4) throw new ArgumentOutOfRangeException(nameof(evenHeight), "Length can't be less than 3 (<3).");
-                if (evenHeight % 2 != 0) throw new ArgumentException("Height must be an even number.", nameof(evenHeight));
+                if (height < 4) throw new ArgumentOutOfRangeException(nameof(height), "Length can't be less than 3 (<3).");
+                if (height % 2 != 0) throw new ArgumentException("Height must be an even number.", nameof(height));
 
                 startY++; // Push GUI down from line 0
 
@@ -233,17 +269,17 @@ namespace ConsoleGUI
                     $"{_cornerBL[(int)borderStyle]}{_cornerTR[(int)borderStyle]}"
                 };
 
-                CharAtPosition(straightEdge ? _lineV[(int)borderStyle] : fragment[0 + (int)zigzagStyle][0 + (int)zigzagStyle], x + (int)zigzagStyle, startY);
+                CharAtPosition(straightEdge ? _lineV[(int)borderStyle] : fragment[0 + (int)zigzagStyle][0 + (int)zigzagStyle], leftX + (int)zigzagStyle, startY);
 
-                for (int i = startY + 1; i < startY + evenHeight -1; i+=2)
+                for (int i = startY + 1; i < startY + height -1; i+=2)
                 {
-                    Console.SetCursorPosition(x, i);
+                    Console.SetCursorPosition(leftX, i);
                     Console.Write(fragment[1 - (int)zigzagStyle]);
-                    Console.SetCursorPosition(x, i+1);
+                    Console.SetCursorPosition(leftX, i+1);
                     Console.Write(fragment[0 + (int)zigzagStyle]);
                 }
 
-                CharAtPosition(straightEdge ? _lineV[(int)borderStyle] : fragment[1 - (int)zigzagStyle][0 + (int)zigzagStyle], x + (int)zigzagStyle, startY + evenHeight - 1);
+                CharAtPosition(straightEdge ? _lineV[(int)borderStyle] : fragment[1 - (int)zigzagStyle][0 + (int)zigzagStyle], leftX + (int)zigzagStyle, startY + height - 1);
             }
             catch (ArgumentException ex)
             {
@@ -252,6 +288,17 @@ namespace ConsoleGUI
 
         }
 
+        /// <summary>
+        /// Draws a vertical column
+        /// </summary>
+        /// <param name="x">X position for the line</param>
+        /// <param name="startY">Y position for the origin point</param>
+        /// <param name="height">Height of the line</param>
+        /// <param name="borderStyle">Single or double-line border style</param>
+        /// <param name="edgeStyleTop">Sets the top-most char as a straight line or a junction</param>
+        /// <param name="edgeStyleBottom">Sets the bottom-most char as a straight line or a junction</param>
+        /// <param name="bgColor">Background color</param>
+        /// <param name="textColor">Foreground/text color</param>
         public static void DrawColumn(int x, int startY, int height, BorderStyle borderStyle = 0,
             EdgeStyle edgeStyleTop = EdgeStyle.None, EdgeStyle edgeStyleBottom = EdgeStyle.None,
             ConsoleColor? bgColor = null, ConsoleColor? textColor = null)
@@ -289,6 +336,20 @@ namespace ConsoleGUI
             }
         }
 
+        /// <summary>
+        /// Draws a content box
+        /// </summary>
+        /// <param name="left">X coordinate for the left-hand side of the box</param>
+        /// <param name="top">Y coordinate for the top of the box</param>
+        /// <param name="width">Width of the box</param>
+        /// <param name="height">Height of the box</param>
+        /// <param name="borderStyle">Single or double-line border style</param>
+        /// <param name="cornerStyleTL">Sets the top-left char as a corner or a junction</param>
+        /// <param name="cornerStyleTR">Sets the top-right char as a corner or a junction</param>
+        /// <param name="cornerStyleBL">Sets the bottom-left char as a corner or a junction</param>
+        /// <param name="cornerStyleBR">Sets the bottom-right char as a corner or a junction</param>
+        /// <param name="bgColor">Background color</param>
+        /// <param name="textColor">Foreground/text color</param>
         public static void DrawBox(int left, int top, int width, int height, BorderStyle borderStyle = 0,
             CornerStyle cornerStyleTL = 0, CornerStyle cornerStyleTR = 0, CornerStyle cornerStyleBL = 0, CornerStyle cornerStyleBR = 0,
             ConsoleColor? bgColor = null, ConsoleColor? textColor = null)
