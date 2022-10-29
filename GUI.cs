@@ -131,11 +131,12 @@ namespace ConsoleGUI
         /// <param name="width">Width of the line</param>
         /// <param name="borderStyle">Single or double-line border style</param>
         /// <param name="zigzagStyle">Option to flip the zigzag pattern vertically</param>
-        /// <param name="straightEdge">To be deprecated? (Whether or not the ends of the line are straight rather than corners)</param>
+        /// <param name="straightEdge">Option to have the pattern starting and ending with straight lines</param>
         /// <param name="bgColor">Background color</param>
         /// <param name="textColor">Foreground/text color</param>
         public static void DrawLineZigzag(int startX, int topY, int width, BorderStyle borderStyle = 0,
-            ZigzagStyle zigzagStyle = ZigzagStyle.Regular, bool straightEdge = false, ConsoleColor? bgColor = null, ConsoleColor? textColor = null)
+            ZigzagStyle zigzagStyle = ZigzagStyle.Regular, bool straightEdge = false, bool flipped = false,
+            ConsoleColor? bgColor = null, ConsoleColor? textColor = null)
         {
             try
             {
@@ -154,32 +155,100 @@ namespace ConsoleGUI
 
                 int numberOfZags = width / 4;
                 int remainder = width % 4;      // can be 0, 1, 2, or *3* (standard)
-                // TODO: Improve the zigzags
-                string[] fragment = {
-                    $"{_cornerTL[(int)borderStyle]}{_cornerTR[(int)borderStyle]}",
-                    $"{_cornerBL[(int)borderStyle]}{_cornerBR[(int)borderStyle]}"
-                };
-                string line = string.Empty;
+                bool midIsTop = (numberOfZags % 2 == 0);
 
-                for (int i = 0; i < width-1; i+=2)
+                string[] fragment = new string[2];
+                if (flipped)
                 {
-                    line += fragment[0 + (int)zigzagStyle];
+                    fragment[0] = $"{_cornerBL[(int)borderStyle]}{_lineH[(int)borderStyle]}{_cornerBR[(int)borderStyle]} ";
+                    fragment[1] = $"{_cornerTR[(int)borderStyle]} {_cornerTL[(int)borderStyle]}{_lineH[(int)borderStyle]}";
+                }
+                else {
+                    fragment[0] = $"{_cornerTL[(int)borderStyle]}{_lineH[(int)borderStyle]}{_cornerTR[(int)borderStyle]} ";
+                    fragment[1] = $"{_cornerBR[(int)borderStyle]} {_cornerBL[(int)borderStyle]}{_lineH[(int)borderStyle]}";
                 }
 
-                if (straightEdge)
-                    line = _lineH[(int)borderStyle] + line[1..(line.Length-1)] + _lineH[(int)borderStyle];
+                int lineIndex;
+                string line1 = string.Empty, line2 = string.Empty;
+                int fragmentIndex = 1;
+
+                char edge = straightEdge ? _lineH[(int)borderStyle] : fragment[0 + (int)zigzagStyle][0];
+                line1 += (flipped ? " " : edge);
+                line2 += (flipped ? edge : " ");
+                for (lineIndex = 1; lineIndex < width / 2; lineIndex++)
+                {
+                    if (fragmentIndex >= fragment[0 + (int)zigzagStyle].Length)
+                        fragmentIndex = 0;
+
+                    line1 += fragment[0 + (int)zigzagStyle][fragmentIndex];
+                    line2 += fragment[1 - (int)zigzagStyle][fragmentIndex];
+
+                    fragmentIndex++;
+                }
+
+                if (remainder != 3)
+                {
+                    if (midIsTop)
+                    {
+                        fragmentIndex++;
+                        if (fragmentIndex >= fragment[0 + (int)zigzagStyle].Length)
+                            fragmentIndex = 0;
+                    }
+
+                    if (width > 2)
+                    {
+                        if (remainder == 2)
+                        {
+                            if (!midIsTop)
+                                fragmentIndex++;
+                        }
+                        else if (remainder == 1)
+                        {
+                            line1 = line1[..^1];
+                            line2 = line2[..^1];
+
+                            for (int i = 0; i < 3; i++)
+                            {
+                                if (fragmentIndex >= fragment[0 + (int)zigzagStyle].Length)
+                                    fragmentIndex = 0;
+
+                                line1 += fragment[0 + (int)zigzagStyle][fragmentIndex];
+                                line2 += fragment[1 - (int)zigzagStyle][fragmentIndex];
+                                fragmentIndex++;
+                            }
+                            
+                            lineIndex += 2;
+                            fragmentIndex++;
+                        }
+                        else if (remainder == 0)
+                        {
+                            line1 += line1[^1];
+                            line2 += line2[^1];
+
+                            lineIndex++;    
+                        }
+                    }
+                }
+
+                for (int i = lineIndex; i < width-1; i++)
+                {
+                    if (fragmentIndex >= fragment[0 + (int)zigzagStyle].Length)
+                        fragmentIndex = 0;
+
+                    line1 += fragment[0 + (int)zigzagStyle][fragmentIndex];
+                    line2 += fragment[1 - (int)zigzagStyle][fragmentIndex];
+
+                    fragmentIndex++;
+                }
+                edge = straightEdge ? _lineH[(int)borderStyle] : fragment[0 + (int)zigzagStyle][2];
+                line1 += (flipped ? " " : edge);
+                line2 += (flipped ? edge : " ");
 
                 Console.SetCursorPosition(startX, topY + (int)zigzagStyle);
-                Console.Write(line);
+                Console.Write((flipped ? line2 : line1));
 
-                line = string.Empty;
-
-                for (int i = 0; i < width-3; i+=2)
-                {
-                    line += fragment[1 - (int)zigzagStyle];
-                }
-                Console.SetCursorPosition(startX + 1, topY + 1 - (int)zigzagStyle);
-                Console.WriteLine(line);
+                Console.SetCursorPosition(startX, topY + 1 - (int)zigzagStyle);
+                Console.Write((flipped ? line1 : line2));
             }
             catch (ArgumentException ex)
             {
@@ -263,6 +332,8 @@ namespace ConsoleGUI
 
                 Console.BackgroundColor = bgColor ?? _guiColor;
                 Console.ForegroundColor = textColor ?? _guiTextColor;
+
+                // TODO: Bring zigzag columns in line with zigzag lines? (i.e. double width)
 
                 string[] fragment = {
                     $"{_cornerTL[(int)borderStyle]}{_cornerBR[(int)borderStyle]}",
