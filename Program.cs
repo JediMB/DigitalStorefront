@@ -52,7 +52,7 @@ namespace Digital_Storefront
             GUI.DrawLine(1, 6, GUI.GetGUIWidth - 2, 0, 0, 0, ConsoleColor.DarkBlue, ConsoleColor.Yellow);
             GUI.DrawBox(0, GUI.GetGUIHeight - 7, GUI.GetGUIWidth, 7, GUI.BorderStyle.Double, 0, 0, 0, 0, ConsoleColor.DarkBlue, ConsoleColor.Yellow);
             GUI.DrawLineZigzag(1, 9, GUI.GetGUIWidth-2, GUI.BorderStyle.Single, GUI.ZigzagStyle.Regular, true, false, ConsoleColor.DarkRed, ConsoleColor.White);
-            GUI.DrawLineZigzag(1, 39, GUI.GetGUIWidth - 2, GUI.BorderStyle.Single, GUI.ZigzagStyle.Reversed, true, true, ConsoleColor.DarkRed, ConsoleColor.White);
+            GUI.DrawLineZigzag(1, 39, GUI.GetGUIWidth-2, GUI.BorderStyle.Single, GUI.ZigzagStyle.Reversed, true, true, ConsoleColor.DarkRed, ConsoleColor.White);
             GUI.DrawColumnZigzag(0, 9, 32, GUI.BorderStyle.Single, GUI.ZigzagStyle.Regular, false, ConsoleColor.DarkRed, ConsoleColor.White);
             GUI.DrawColumnZigzag(GUI.GetGUIWidth-2, 9, 32, GUI.BorderStyle.Single, GUI.ZigzagStyle.Reversed, false, ConsoleColor.DarkRed, ConsoleColor.White);
         }

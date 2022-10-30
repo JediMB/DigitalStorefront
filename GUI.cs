@@ -155,7 +155,7 @@ namespace ConsoleGUI
 
                 int numberOfZags = width / 4;
                 int remainder = width % 4;      // can be 0, 1, 2, or *3* (standard)
-                bool midIsTop = (numberOfZags % 2 == 0);
+                bool midPointsUp = (numberOfZags % 2 == 0);
 
                 string[] fragment = new string[2];
                 if (flipped)
@@ -175,63 +175,59 @@ namespace ConsoleGUI
                 char edge = straightEdge ? _lineH[(int)borderStyle] : fragment[0 + (int)zigzagStyle][0];
                 line1 += (flipped ? " " : edge);
                 line2 += (flipped ? edge : " ");
-                for (lineIndex = 1; lineIndex < width / 2; lineIndex++)
+
+                for (lineIndex = 1; lineIndex < width - 1; lineIndex++)
                 {
-                    if (fragmentIndex >= fragment[0 + (int)zigzagStyle].Length)
-                        fragmentIndex = 0;
-
-                    line1 += fragment[0 + (int)zigzagStyle][fragmentIndex];
-                    line2 += fragment[1 - (int)zigzagStyle][fragmentIndex];
-
-                    fragmentIndex++;
-                }
-
-                if (remainder != 3)
-                {
-                    if (midIsTop)
+                    if (lineIndex == width / 2 && remainder != 3)   // Special behavior to adjust the zigzag pattern at the halfway point
                     {
-                        fragmentIndex++;
-                        if (fragmentIndex >= fragment[0 + (int)zigzagStyle].Length)
-                            fragmentIndex = 0;
-                    }
-
-                    if (width > 2)
-                    {
-                        if (remainder == 2)
-                        {
-                            if (!midIsTop)
-                                fragmentIndex++;
-                        }
-                        else if (remainder == 1)
-                        {
-                            line1 = line1[..^1];
-                            line2 = line2[..^1];
-
-                            for (int i = 0; i < 3; i++)
-                            {
-                                if (fragmentIndex >= fragment[0 + (int)zigzagStyle].Length)
-                                    fragmentIndex = 0;
-
-                                line1 += fragment[0 + (int)zigzagStyle][fragmentIndex];
-                                line2 += fragment[1 - (int)zigzagStyle][fragmentIndex];
-                                fragmentIndex++;
-                            }
-                            
-                            lineIndex += 2;
+                        if (midPointsUp)
                             fragmentIndex++;
-                        }
-                        else if (remainder == 0)
-                        {
-                            line1 += line1[^1];
-                            line2 += line2[^1];
 
-                            lineIndex++;    
+                        if (width > 2)
+                        {
+                            switch (remainder)
+                            {
+                                case 0:
+                                    line1 += line1[^1];
+                                    line2 += line2[^1];
+                                    break;
+
+                                case 1:
+                                    line1 = line1[..^1];
+                                    line2 = line2[..^1];
+
+                                    for (int i = 0; i < 3; i++)
+                                    {
+                                        if (fragmentIndex >= fragment[0 + (int)zigzagStyle].Length)
+                                            fragmentIndex = 0;
+
+                                        line1 += fragment[0 + (int)zigzagStyle][fragmentIndex];
+                                        line2 += fragment[1 - (int)zigzagStyle][fragmentIndex];
+                                        fragmentIndex++;
+                                    }
+
+                                    lineIndex++;
+                                    fragmentIndex++;
+                                    break;
+
+                                case 2:
+                                    if (!midPointsUp)
+                                        fragmentIndex++;
+
+                                    if (fragmentIndex >= fragment[0 + (int)zigzagStyle].Length)
+                                        fragmentIndex = 0;
+
+                                    line1 += fragment[0 + (int)zigzagStyle][fragmentIndex];
+                                    line2 += fragment[1 - (int)zigzagStyle][fragmentIndex];
+                                    fragmentIndex++;
+                                    break;
+                            }
+
+                            continue;
                         }
                     }
-                }
 
-                for (int i = lineIndex; i < width-1; i++)
-                {
+                    // Regular loop behavior here
                     if (fragmentIndex >= fragment[0 + (int)zigzagStyle].Length)
                         fragmentIndex = 0;
 
@@ -240,6 +236,7 @@ namespace ConsoleGUI
 
                     fragmentIndex++;
                 }
+
                 edge = straightEdge ? _lineH[(int)borderStyle] : fragment[0 + (int)zigzagStyle][2];
                 line1 += (flipped ? " " : edge);
                 line2 += (flipped ? edge : " ");
@@ -333,7 +330,7 @@ namespace ConsoleGUI
                 Console.BackgroundColor = bgColor ?? _guiColor;
                 Console.ForegroundColor = textColor ?? _guiTextColor;
 
-                // TODO: Bring zigzag columns in line with zigzag lines? (i.e. double width)
+                // TODO: Bring zigzag columns in line with zigzag lines? (i.e. triple width)
 
                 string[] fragment = {
                     $"{_cornerTL[(int)borderStyle]}{_cornerBR[(int)borderStyle]}",
