@@ -51,10 +51,10 @@ namespace Digital_Storefront
             GUI.DrawBox(0, 0, GUI.GetGUIWidth, 9, GUI.BorderStyle.Double, 0, 0, 0, 0, ConsoleColor.DarkBlue, ConsoleColor.Yellow);
             GUI.DrawLine(1, 6, GUI.GetGUIWidth - 2, 0, 0, 0, ConsoleColor.DarkBlue, ConsoleColor.Yellow);
             GUI.DrawBox(0, GUI.GetGUIHeight - 7, GUI.GetGUIWidth, 7, GUI.BorderStyle.Double, 0, 0, 0, 0, ConsoleColor.DarkBlue, ConsoleColor.Yellow);
-            GUI.DrawLineZigzag(1, 9, GUI.GetGUIWidth-2, GUI.BorderStyle.Single, GUI.ZigzagStyle.Regular, true, false, ConsoleColor.DarkRed, ConsoleColor.White);
-            GUI.DrawLineZigzag(1, 39, GUI.GetGUIWidth-2, GUI.BorderStyle.Single, GUI.ZigzagStyle.Reversed, true, true, ConsoleColor.DarkRed, ConsoleColor.White);
-            GUI.DrawColumnZigzag(0, 9, 32, GUI.BorderStyle.Single, GUI.ZigzagStyle.Regular, false, ConsoleColor.DarkRed, ConsoleColor.White);
-            GUI.DrawColumnZigzag(GUI.GetGUIWidth-2, 9, 32, GUI.BorderStyle.Single, GUI.ZigzagStyle.Reversed, false, ConsoleColor.DarkRed, ConsoleColor.White);
+            GUI.DrawLineZigzag(1, 9, GUI.GetGUIWidth-2, GUI.BorderStyle.Single, true, false, ConsoleColor.DarkRed, ConsoleColor.White);
+            GUI.DrawLineZigzag(1, 39, GUI.GetGUIWidth-2, GUI.BorderStyle.Single, true, true, ConsoleColor.DarkRed, ConsoleColor.White);
+            GUI.DrawColumnZigzag(0, 9, 32, GUI.BorderStyle.Single, false, false, ConsoleColor.DarkRed, ConsoleColor.White);
+            GUI.DrawColumnZigzag(GUI.GetGUIWidth-3, 9, 32, GUI.BorderStyle.Single, false, true, ConsoleColor.DarkRed, ConsoleColor.White);
         }
 
         /// <summary>
@@ -70,10 +70,10 @@ namespace Digital_Storefront
             GUI.CreateTextbox(6, GUI.GetGUIHeight - 5, 18, 1, "items in your cart", ConsoleColor.DarkBlue, ConsoleColor.Yellow);
             GUI.CreateTextbox(2, GUI.GetGUIHeight - 3, 30, 1, Data.copyright, ConsoleColor.DarkBlue, ConsoleColor.Yellow);
 
-            GUI.CreateTextbox(2, 11, 62, 2, " MUGS\n" + Data.GetMugsHeaders(), ConsoleColor.DarkRed, ConsoleColor.White);
-            GUI.CreateTextbox(2, 13, 62, GUI.GetGUIHeight - 22, Data.GetMugsAsColumns(true, true), null, null, GUI.Interactivity.ScrollAndSelect);
-            GUI.CreateTextbox(GUI.GetGUIWidth - 64, 11, 62, 2, " T-SHIRTS\n" + Data.GetTShirtsHeaders(), ConsoleColor.DarkRed, ConsoleColor.White);
-            GUI.CreateTextbox(GUI.GetGUIWidth - 64, 13, 62, GUI.GetGUIHeight - 22, Data.GetTShirtsAsColumns(true), null, null, GUI.Interactivity.ScrollOnly);
+            GUI.CreateTextbox(3, 11, 61, 2, " MUGS\n" + Data.GetMugsHeaders(), ConsoleColor.DarkRed, ConsoleColor.White);
+            GUI.CreateTextbox(3, 13, 61, GUI.GetGUIHeight - 22, Data.GetMugsAsColumns(true, true), null, null, GUI.Interactivity.ScrollAndSelect);
+            GUI.CreateTextbox(GUI.GetGUIWidth - 64, 11, 61, 2, " T-SHIRTS\n" + Data.GetTShirtsHeaders(), ConsoleColor.DarkRed, ConsoleColor.White);
+            GUI.CreateTextbox(GUI.GetGUIWidth - 64, 13, 61, GUI.GetGUIHeight - 22, Data.GetTShirtsAsColumns(true), null, null, GUI.Interactivity.ScrollOnly);
         }
     }
 }

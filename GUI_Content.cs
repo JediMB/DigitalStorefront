@@ -44,11 +44,29 @@ namespace ConsoleGUI
                 set
                 {
                     textFull = value;
-                    textFormatted = FormatText(textFull, width);
-                    scrollBar = (textFormatted.Length > height);
+                    string[] newTextFormatted = FormatText(textFull, width);
+                    scrollBar = (newTextFormatted.Length > height) && height >= 3;
 
-                    if (scrollBar)  // adjust the text to a reduced with if there's need of a scrollbar
-                        textFormatted = FormatText(textFull, width - 1);
+                    if (scrollBar)  // Adjust the text to a reduced width if there's need of a scrollbar
+                        newTextFormatted = FormatText(textFull, width - 1);
+
+                    if (newTextFormatted.Length < textFormatted?.Length)
+                    {
+                        if (selectedLine > newTextFormatted.Length - 1)
+                        {
+                            selectedLine = newTextFormatted.Length - 1;
+
+                            if (selectedLine < 0)
+                                selectedLine = 0;
+                        }
+
+                        for (int line = 0; line < textFormatted.Length; line++)
+                            textFormatted[line] = " ".PadRight(width);
+
+                        Render(true, false);
+                    }
+
+                    textFormatted = newTextFormatted;
 
                     Render();
                 }
@@ -65,13 +83,22 @@ namespace ConsoleGUI
 
                 text = addToTop ? text + linebreakChars : linebreakChars + text;
 
-                string[] newTextFormatted = FormatText(text, width);
+                string[] newTextFormatted = FormatText(text, width - (scrollBar ? 1 : 0));
+
+                if (!scrollBar && newTextFormatted.Length + textFormatted.Length > height && height >= 3)
+                {
+                    newTextFormatted = FormatText(text, width - 1);
+                    textFormatted = FormatText(text, width - 1);
+                }
+
                 int newStartLine = addToTop ? 0 : textFormatted.Length;
                 int newEndLine = addToTop ? newTextFormatted.Length - 1 : textFormatted.Length + newTextFormatted.Length + 1;
 
                 textFormatted = addToTop ? newTextFormatted.Concat(textFormatted).ToArray() : textFormatted.Concat(newTextFormatted).ToArray();
 
                 Render(autoScroll, !addToTop, renderSlow, milliSecDelay, newStartLine, newEndLine);
+
+                // TODO: Thoroughly test this code to make sure it works properly.
             }
 
             public TextBox(int left, int top, int width, int height, int selectedLine, string text = "", ConsoleColor bgColor = _guiColor, ConsoleColor textColor = _guiTextColor, ConsoleColor inactiveColor = _guiInactiveColor)
@@ -97,7 +124,7 @@ namespace ConsoleGUI
             private static string[] FormatText(string text, int width)
             {
                 if (string.IsNullOrWhiteSpace(text))
-                    return new string[] { "" };
+                    return new string[] { "".PadRight(width) };
 
                 text = text.Replace('\t', ' ');
 
@@ -185,12 +212,15 @@ namespace ConsoleGUI
             /// </summary>
             public void NextLine()
             {
-                if (selectedLine < height - 1 && selectedLine >= 0)
-                    selectedLine++;
-                else
-                    ScrollDown(render: false);
+                if (selectedLine < textFormatted.Length - 1)
+                {
+                    if (selectedLine < height - 1 && selectedLine >= 0)
+                        selectedLine++;
+                    else
+                        ScrollDown(render: false);
 
-                Render();
+                    Render();
+                }
             }
 
 
@@ -255,9 +285,6 @@ namespace ConsoleGUI
             public void Render(bool autoScroll = false, bool scrollToBottom = true,
                 bool renderSlow = false, int millisecDelay = 10, int slowStartLine = -1, int slowEndLine = -1)
             {
-                Console.BackgroundColor = bgColor;
-                Console.ForegroundColor = textColor;
-
                 if (autoScroll)
                 {
                     startLine = 0;
@@ -296,6 +323,8 @@ namespace ConsoleGUI
                         else
                             (Console.BackgroundColor, Console.ForegroundColor) = (inactiveColor, textColor);
                     }
+                    else
+                        (Console.BackgroundColor, Console.ForegroundColor) = (bgColor, textColor);
 
                     Console.SetCursorPosition(left, top + i);
 
@@ -332,19 +361,6 @@ namespace ConsoleGUI
                             Console.Write("▼");
                         else if (i != scrollbarPosition)
                             Console.Write("░");
-
-                        //if (i == scrollbarPosition || startLine == 0 || startLine == textFormatted.Length - height)
-                        //{
-                        //    if (startLine == 0)
-                        //        Console.CursorTop = top + 1;
-                        //    else if (startLine == textFormatted.Length - height)
-                        //        Console.CursorTop = (top + height) - 2;
-
-                        //    Console.Write("█");
-                        //}
-
-                        Console.BackgroundColor = bgColor;
-                        Console.ForegroundColor = textColor;
                     }
 
                     // If the renderer needs to take a second pass at the text for slow-rendering, set the necessary variables
@@ -354,6 +370,8 @@ namespace ConsoleGUI
                         i = -1;
                     }
                 }
+
+                Console.SetCursorPosition(0, 0);
             }
         }
 
@@ -416,9 +434,6 @@ namespace ConsoleGUI
 
                 if (prevSelection != textBoxes[textBoxSelection])
                     textBoxes[textBoxSelection].Render();
-
-                //foreach (TextBox textBox in textBoxes)
-                //    textBox.Render();
             }
         }
 
@@ -439,9 +454,6 @@ namespace ConsoleGUI
                 prevSelection.Render();
                 if (prevSelection != textBoxes[textBoxSelection])
                     textBoxes[textBoxSelection].Render();
-
-                //foreach (TextBox textBox in textBoxes)
-                //    textBox.Render();
             }
         }
 
@@ -490,6 +502,20 @@ namespace ConsoleGUI
                     case ConsoleKey.Enter:
                         if (textBoxes.Count > 0)
                             textBoxes[textBoxSelection].Select();
+                        break;
+
+                    case ConsoleKey.Delete:
+                        if (textBoxes.Count > 0)
+                        {
+                            textBoxes[textBoxSelection].Text = "";
+                        }
+                        break;
+
+                    case ConsoleKey.Insert:
+                        if (textBoxes.Count > 0)
+                        {
+                            textBoxes[textBoxSelection].AddText("Here comes a new challenger!", 0);
+                        }
                         break;
                 }
             }

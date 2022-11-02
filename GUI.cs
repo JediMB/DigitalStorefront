@@ -56,12 +56,6 @@ namespace ConsoleGUI
             Crossing = 6
         }
 
-        public enum ZigzagStyle
-        {
-            Regular = 0,
-            Reversed = 1
-        }
-
         public static int GetGUIWidth { get => _guiWidth; }
         public static int GetGUIHeight { get => _guiHeight; }
 
@@ -135,14 +129,14 @@ namespace ConsoleGUI
         /// <param name="bgColor">Background color</param>
         /// <param name="textColor">Foreground/text color</param>
         public static void DrawLineZigzag(int startX, int topY, int width, BorderStyle borderStyle = 0,
-            ZigzagStyle zigzagStyle = ZigzagStyle.Regular, bool straightEdge = false, bool flipped = false,
+            bool straightEdge = false, bool flipped = false,
             ConsoleColor? bgColor = null, ConsoleColor? textColor = null)
         {
             try
             {
                 // Throw an exception if a parameter value would lead to drawing outside the console buffer...
                 if (startX < 0 || startX > GetGUIWidth) throw new ArgumentOutOfRangeException(nameof(startX), "Origin point is beyond buffer bounds.");
-                if (topY < 0 || topY+1 > GetGUIHeight) throw new ArgumentOutOfRangeException(nameof(topY), "Y position is beyond buffer bounds.");
+                if (topY < 0 || topY > GetGUIHeight - 2) throw new ArgumentOutOfRangeException(nameof(topY), "Y position is beyond buffer bounds.");
                 if (startX + width > GetGUIWidth) throw new ArgumentOutOfRangeException(nameof(startX) + "', '" + nameof(width), "Too long.");
                 // ...or if the specified size is too small for the element to be drawn properly
                 if (width < 2 /*4*/) throw new ArgumentOutOfRangeException(nameof(width), "Length can't be less than 2.");
@@ -171,9 +165,7 @@ namespace ConsoleGUI
                 string line1 = string.Empty, line2 = string.Empty;
                 int fragmentIndex = 1;
 
-                char edge = straightEdge ? _lineH[(int)borderStyle] : fragment[0 + (int)zigzagStyle][0];
-                line1 += (flipped ? " " : edge);
-                line2 += (flipped ? edge : " ");
+                line1 += straightEdge ? _lineH[(int)borderStyle] : fragment[0][0];
 
                 for (lineIndex = 1; lineIndex < width - 1; lineIndex++)
                 {
@@ -197,11 +189,11 @@ namespace ConsoleGUI
 
                                     for (int i = 0; i < 3; i++)
                                     {
-                                        if (fragmentIndex >= fragment[0 + (int)zigzagStyle].Length)
+                                        if (fragmentIndex >= fragment[0].Length)
                                             fragmentIndex = 0;
 
-                                        line1 += fragment[0 + (int)zigzagStyle][fragmentIndex];
-                                        line2 += fragment[1 - (int)zigzagStyle][fragmentIndex];
+                                        line1 += fragment[0][fragmentIndex];
+                                        line2 += fragment[1][fragmentIndex];
                                         fragmentIndex++;
                                     }
 
@@ -213,11 +205,11 @@ namespace ConsoleGUI
                                     if (!midPointsUp)
                                         fragmentIndex++;
 
-                                    if (fragmentIndex >= fragment[0 + (int)zigzagStyle].Length)
+                                    if (fragmentIndex >= fragment[0].Length)
                                         fragmentIndex = 0;
 
-                                    line1 += fragment[0 + (int)zigzagStyle][fragmentIndex];
-                                    line2 += fragment[1 - (int)zigzagStyle][fragmentIndex];
+                                    line1 += fragment[0][fragmentIndex];
+                                    line2 += fragment[1][fragmentIndex];
                                     fragmentIndex++;
                                     break;
                             }
@@ -227,24 +219,22 @@ namespace ConsoleGUI
                     }
 
                     // Regular loop behavior here
-                    if (fragmentIndex >= fragment[0 + (int)zigzagStyle].Length)
+                    if (fragmentIndex >= fragment[0].Length)
                         fragmentIndex = 0;
 
-                    line1 += fragment[0 + (int)zigzagStyle][fragmentIndex];
-                    line2 += fragment[1 - (int)zigzagStyle][fragmentIndex];
+                    line1 += fragment[0][fragmentIndex];
+                    line2 += fragment[1][fragmentIndex];
 
                     fragmentIndex++;
                 }
 
-                edge = straightEdge ? _lineH[(int)borderStyle] : fragment[0 + (int)zigzagStyle][2];
-                line1 += (flipped ? " " : edge);
-                line2 += (flipped ? edge : " ");
+                line1 += straightEdge ? _lineH[(int)borderStyle] : fragment[0][2];
 
-                Console.SetCursorPosition(startX, topY + (int)zigzagStyle);
-                Console.Write((flipped ? line2 : line1));
+                Console.SetCursorPosition(startX, topY + (flipped ? 1 : 0));
+                Console.Write(line1);
 
-                Console.SetCursorPosition(startX, topY + 1 - (int)zigzagStyle);
-                Console.Write((flipped ? line1 : line2));
+                Console.SetCursorPosition(startX + 1, topY + (flipped ? 0 : 1));
+                Console.Write(line2);
             }
             catch (ArgumentException ex)
             {
@@ -312,41 +302,60 @@ namespace ConsoleGUI
         /// <param name="bgColor">Background color</param>
         /// <param name="textColor">Foreground/text color</param>
         public static void DrawColumnZigzag(int leftX, int startY, int height, BorderStyle borderStyle = 0,
-            ZigzagStyle zigzagStyle = ZigzagStyle.Regular, bool straightEdge = false, ConsoleColor ? bgColor = null, ConsoleColor? textColor = null)
+            bool straightEdge = false, bool mirrored = false,
+            ConsoleColor ? bgColor = null, ConsoleColor? textColor = null)
         {
             try
             {
                 // Throw an exception if a parameter value would lead to drawing outside the console buffer...
                 if (startY < 0 || startY > GetGUIHeight) throw new ArgumentOutOfRangeException(nameof(startY), "Origin point is beyond buffer bounds.");
                 if (leftX < 0 || leftX > GetGUIWidth) throw new ArgumentOutOfRangeException(nameof(leftX), "X position is beyond buffer bounds.");
+                if ((mirrored && leftX < 2) || (!mirrored && leftX > GetGUIWidth - 3)) throw new ArgumentOutOfRangeException(nameof(leftX), "Column is partially out of horizontal buffer bounds.");
                 if (startY + height > GetGUIHeight) throw new ArgumentOutOfRangeException(nameof(startY) + "', '" + nameof(height), "Too long.");
                 // ...or if the specified size is too small for the element to be drawn properly
                 if (height < 4) throw new ArgumentOutOfRangeException(nameof(height), "Length can't be less than 3 (<3).");
-                if (height % 2 != 0) throw new ArgumentException("Height must be an even number.", nameof(height));
 
                 startY++; // Push GUI down from line 0
 
                 Console.BackgroundColor = bgColor ?? _guiColor;
                 Console.ForegroundColor = textColor ?? _guiTextColor;
 
-                // TODO: Bring zigzag columns in line with zigzag lines? (i.e. triple width)
+                int line;
+                bool oddHeight = (height % 2 == 1);
+                bool oddLine = false;
 
                 string[] fragment = {
-                    $"{_cornerTL[(int)borderStyle]}{_cornerBR[(int)borderStyle]}",
-                    $"{_cornerBL[(int)borderStyle]}{_cornerTR[(int)borderStyle]}"
+                    $"{_cornerTL[(int)borderStyle]}{_lineH[(int)borderStyle]}{_cornerBR[(int)borderStyle]}",
+                    $"{_cornerBL[(int)borderStyle]}{_lineH[(int)borderStyle]}{_cornerTR[(int)borderStyle]}"
                 };
 
-                CharAtPosition(straightEdge ? _lineV[(int)borderStyle] : fragment[0 + (int)zigzagStyle][0 + (int)zigzagStyle], leftX + (int)zigzagStyle, startY);
+                CharAtPosition(straightEdge ? _lineV[(int)borderStyle] : (mirrored ? fragment[1][2] : fragment[0][0]), leftX + (mirrored ? 2 : 0), startY);
 
-                for (int i = startY + 1; i < startY + height -1; i+=2)
+                for (line = 0; line < (height - 2)/2; line++)
                 {
-                    Console.SetCursorPosition(leftX, i);
-                    Console.Write(fragment[1 - (int)zigzagStyle]);
-                    Console.SetCursorPosition(leftX, i+1);
-                    Console.Write(fragment[0 + (int)zigzagStyle]);
+                    oddLine = (line % 2 == 1);
+
+                    Console.SetCursorPosition(leftX, line + startY + 1);
+                    Console.Write(fragment[mirrored ^ oddLine ? 0 : 1]);
                 }
 
-                CharAtPosition(straightEdge ? _lineV[(int)borderStyle] : fragment[1 - (int)zigzagStyle][0 + (int)zigzagStyle], leftX + (int)zigzagStyle, startY + height - 1);
+                if (oddHeight)
+                {
+                    bool oddZags = ((height - 5) % 4 == 0);
+                    Console.SetCursorPosition(leftX, line + startY + 1);
+                    Console.Write((mirrored ^ oddZags ? "  " + _lineV[(int)borderStyle] : _lineV[(int)borderStyle] + "  "));
+                    line++;
+                }
+
+                for (int i = line; line < height - 2; line++)
+                {
+                    oddLine = (line % 2 == 1);
+
+                    Console.SetCursorPosition(leftX, line + startY + 1);
+                    Console.Write(fragment[mirrored ^ (!oddLine ^ !oddHeight) ? 0 : 1]);
+                }
+
+                CharAtPosition(straightEdge ? _lineV[(int)borderStyle] : (mirrored ? fragment[0][2] : fragment[1][0]), leftX + (mirrored ? 2 : 0), startY + height - 1);
             }
             catch (ArgumentException ex)
             {
