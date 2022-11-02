@@ -1,6 +1,5 @@
 ﻿using Digital_Storefront;
-using System.Reflection.Metadata.Ecma335;
-using static System.Net.Mime.MediaTypeNames;
+using System.Diagnostics.CodeAnalysis;
 
 namespace ConsoleGUI
 {
@@ -12,10 +11,11 @@ namespace ConsoleGUI
         private static readonly List<TextBox> textBoxes = new();
         private static byte textBoxSelection = 0;
 
-        public enum Interactable
+        public enum Interactivity
         {
-            No,
-            Yes
+            None,
+            ScrollOnly,
+            ScrollAndSelect
         }
 
         private class TextBox
@@ -24,6 +24,7 @@ namespace ConsoleGUI
             private readonly int top;
             private readonly int width;
             private readonly int height;
+            private bool scrollBar;
 
             private string      textFull;
             private string[]    textFormatted;
@@ -39,14 +40,38 @@ namespace ConsoleGUI
             /// </summary>
             public string Text
             {
+                [MemberNotNull(nameof(textFull), nameof(textFormatted))]
                 set
                 {
                     textFull = value;
                     textFormatted = FormatText(textFull, width);
+                    scrollBar = (textFormatted.Length > height);
+
+                    if (scrollBar)  // adjust the text to a reduced with if there's need of a scrollbar
+                        textFormatted = FormatText(textFull, width - 1);
+
                     Render();
                 }
 
                 get => textFull;
+            }
+
+            public void AddText(string text, byte linebreaks = 1, bool addToTop = false, bool autoScroll = false, bool renderSlow = false, int milliSecDelay = 10)
+            {
+                string linebreakChars = string.Empty;
+
+                for (int i = 0; i < linebreaks; i++)
+                    linebreakChars += "\n";
+
+                text = addToTop ? text + linebreakChars : linebreakChars + text;
+
+                string[] newTextFormatted = FormatText(text, width);
+                int newStartLine = addToTop ? 0 : textFormatted.Length;
+                int newEndLine = addToTop ? newTextFormatted.Length - 1 : textFormatted.Length + newTextFormatted.Length + 1;
+
+                textFormatted = addToTop ? newTextFormatted.Concat(textFormatted).ToArray() : textFormatted.Concat(newTextFormatted).ToArray();
+
+                Render(autoScroll, !addToTop, renderSlow, milliSecDelay, newStartLine, newEndLine);
             }
 
             public TextBox(int left, int top, int width, int height, int selectedLine, string text = "", ConsoleColor bgColor = _guiColor, ConsoleColor textColor = _guiTextColor, ConsoleColor inactiveColor = _guiInactiveColor)
@@ -56,14 +81,14 @@ namespace ConsoleGUI
                 this.width = width;
                 this.height = height;
 
-                this.textFull = text;
-                this.textFormatted = FormatText(textFull, width);
                 this.startLine = 0;
                 this.selectedLine = selectedLine;
 
                 this.bgColor = bgColor;
                 this.textColor = textColor;
                 this.inactiveColor = inactiveColor;
+
+                this.Text = text;   // sets textFull, textFormatted, and scrollBar
             }
 
             /// <summary>
@@ -89,7 +114,7 @@ namespace ConsoleGUI
                 Queue<string> lines = new();
 
                 while (text != string.Empty)                         // Split the text into lines that fit into the textbox
-                    SplitText(lines, text, out text, width);
+                    SplitText(lines, ref text, width);
                                 
                 return lines.ToArray();
             }
@@ -97,52 +122,49 @@ namespace ConsoleGUI
             /// <summary>
             /// Identifies at what point to split a line in order to fit it into a textbox.
             /// </summary>
-            private static void SplitText(Queue<string> lines, string textIn, out string textOut, int maxLength)
+            private static void SplitText(Queue<string> lines, ref string text, int maxLength)
             {
-                for (int i = 0; i <= maxLength && i < textIn.Length; i++)
+                for (int i = 0; i <= maxLength && i < text.Length; i++)
                 {
-                    if (textIn[i] == '\n' || textIn[i] == '\r')             // If there's already a linebreak on the current row, split the string there
+                    if (text[i] == '\n' || text[i] == '\r')             // If there's already a linebreak on the current row, split the string there
                     {
-                        if (textIn[i] == '\r' && textIn[i + 1] == '\n')     // If carriage return followed by newline, remove the latter
-                            textIn = textIn.Remove(i + 1, 1);
+                        if (text[i] == '\r' && text[i + 1] == '\n')     // If carriage return followed by newline, remove the latter
+                            text = text.Remove(i + 1, 1);
 
-                        lines.Enqueue(textIn[..i].PadRight(maxLength));     // Put the new line in the queue
-                        textIn = textIn[(i + 1)..];                         // Remove that line from the full text
+                        lines.Enqueue(text[..i].PadRight(maxLength));     // Put the new line in the queue
+                        text = text[(i + 1)..];                         // Remove that line from the full text
                                                                         
-                        if (textIn.Length > maxLength)                      // If there is more than one more line of text, start over...
-                        {
-                            textOut = textIn;
+                        if (text.Length > maxLength)                      // If there is more than one more line of text, start over...
                             return;
-                        }
 
                         i = 0;                                              // ...and if there isn't, restart the for-loop to look for more linebreaks
                     }
                 }
 
                 // If the remaining text is longer than the textbox and doesn't have any linebreaks, split the string at a dash or blankspace
-                if (textIn.Length > maxLength)
+                if (text.Length > maxLength)
                 {
                     for (int i = maxLength; i >= 0; i--)
                     {
-                        if (i != maxLength && textIn[i] == '-')
+                        if (i != maxLength && text[i] == '-')
                         {
-                            lines.Enqueue(textIn[..(i + 1)].PadRight(maxLength));
-                            textOut = textIn[(i + 1)..];
+                            lines.Enqueue(text[..(i + 1)].PadRight(maxLength));
+                            text = text[(i + 1)..];
                             return;
                         }
 
-                        if (textIn[i] == ' ')
+                        if (text[i] == ' ')
                         {
-                            lines.Enqueue(textIn[..i].PadRight(maxLength));
-                            textOut = textIn[(i + 1)..];
+                            lines.Enqueue(text[..i].PadRight(maxLength));
+                            text = text[(i + 1)..];
                             return;
                         }
                     }
                 }
 
-                lines.Enqueue(textIn.PadRight(maxLength));  // If the remaining, linebreak-free text fits in the textbox, add it to the queue
+                lines.Enqueue(text.PadRight(maxLength));  // If the remaining, linebreak-free text fits in the textbox, add it to the queue
 
-                textOut = string.Empty;
+                text = string.Empty;
             }
 
             /// <summary>
@@ -153,7 +175,7 @@ namespace ConsoleGUI
                 if (selectedLine > 0)
                     selectedLine--;
                 else
-                    ScrollUp();
+                    ScrollUp(render: false);
 
                 Render();
             }
@@ -163,10 +185,10 @@ namespace ConsoleGUI
             /// </summary>
             public void NextLine()
             {
-                if (selectedLine < height - 1)
+                if (selectedLine < height - 1 && selectedLine >= 0)
                     selectedLine++;
                 else
-                    ScrollDown();
+                    ScrollDown(render: false);
 
                 Render();
             }
@@ -175,7 +197,7 @@ namespace ConsoleGUI
             /// <summary>
             /// Handles scrolling a textbox upwards.
             /// </summary>
-            public void ScrollUp()
+            public void ScrollUp(bool render = true)
             {
                 if (textFormatted.Length > height)
                 {
@@ -183,20 +205,26 @@ namespace ConsoleGUI
 
                     if (startLine < 0)
                         startLine = 0;
+
+                    if (render)
+                        Render();
                 }
             }
 
             /// <summary>
             /// Handles scrolling a textbox downwards.
             /// </summary>
-            public void ScrollDown()
+            public void ScrollDown(bool render = true)
             {
                 if (textFormatted.Length > height)
                 {
-                startLine++;
+                    startLine++;
 
                     if (startLine > (textFormatted.Length - height))
                         startLine = textFormatted.Length - height;
+
+                    if (render)
+                        Render();
                 }
             }
 
@@ -206,7 +234,7 @@ namespace ConsoleGUI
             /// </summary>
             public void Select()
             {
-                if (textFormatted[startLine + selectedLine][0] != '✓')
+                if (selectedLine >= 0 && selectedLine < textFormatted.Length && textFormatted[startLine + selectedLine][0] != '✓')
                 {
                     textFormatted[startLine + selectedLine] = '✓' + textFormatted[startLine + selectedLine][1..];
 
@@ -224,65 +252,107 @@ namespace ConsoleGUI
             /// <summary>
             /// Renders all the visible text lines in a textbox
             /// </summary>
-            public void Render()
+            public void Render(bool autoScroll = false, bool scrollToBottom = true,
+                bool renderSlow = false, int millisecDelay = 10, int slowStartLine = -1, int slowEndLine = -1)
             {
                 Console.BackgroundColor = bgColor;
                 Console.ForegroundColor = textColor;
 
+                if (autoScroll)
+                {
+                    startLine = 0;
+
+                    if (scrollToBottom && textFormatted.Length > height)
+                        startLine = textFormatted.Length - height;
+                }
+
+                bool renderAllSlow = renderSlow && (slowStartLine == -1 && slowEndLine == -1);
+                bool fastPass = true;
+
                 // Calculations used for moving the scrollbar
-                float scrollPercentage = ((float)startLine + height / 2) / (float)textFormatted.Length;
-                int scrollbarPosition = 1 + (int)((height - 2) * scrollPercentage);
+                float scrollPercentage;
+                int scrollbarPosition = 0;
+
+                if (scrollBar)
+                {
+                    scrollPercentage = ((float)startLine + height / 2) / (float)textFormatted.Length;
+                    scrollbarPosition = startLine == 0 ? 1
+                        : (startLine == textFormatted.Length - height ? height - 2
+                        : 1 + (int)((height - 2) * scrollPercentage));
+
+                    Console.SetCursorPosition(left + width - 1, top + scrollbarPosition);
+                    Console.Write("█");
+                }
 
                 for (int i = 0; i < height; i++)
                 {
                     if (i + startLine >= textFormatted.Length)
-                        return;
+                        break;
 
                     // This handles showing what line you have marked
-                    if (GUI.textBoxes.Count != 0 && i == selectedLine) {
-                        if (this == textBoxes[GUI.textBoxSelection])    // Different colors depending on if it's the active textbox or not
+                    if (GUI.textBoxes?.Count != 0 && i == selectedLine) {
+                        if (this == textBoxes?[GUI.textBoxSelection])    // Different colors depending on if it's the active textbox or not
                             (Console.BackgroundColor, Console.ForegroundColor) = (textColor, bgColor);
                         else
                             (Console.BackgroundColor, Console.ForegroundColor) = (inactiveColor, textColor);
                     }
 
                     Console.SetCursorPosition(left, top + i);
-                    Console.Write(textFormatted[i + startLine]);
 
-                    // This scrollbar code was hacked in at the very end. Would have preferred to have it more robustly implemented in the textbox code, but... time.
-                    if (selectedLine != -1)
+                    if (fastPass)
                     {
-                        if (i == 0 && startLine > 0)
+                        if (renderAllSlow || (renderSlow && i + startLine >= slowStartLine && i + startLine <= slowEndLine))
+                            Console.Write(String.Empty.PadRight(width));
+                        else
+                            Console.Write(textFormatted[i + startLine]);
+                    }
+                    else
+                    {
+                        if (renderAllSlow || (i + startLine >= slowStartLine && i + startLine <= slowEndLine))
                         {
-                            Console.BackgroundColor = bgColor;
-                            Console.ForegroundColor = textColor;
-                            Console.CursorLeft--;
-                            Console.Write("▲");
-                        }
-                        else if (i == scrollbarPosition || startLine == 0 || startLine == textFormatted.Length - height)
-                        {
-                            if (startLine == 0)
-                                Console.CursorTop = top + 1;
-                            else if (startLine == textFormatted.Length - height)
-                                Console.CursorTop = (top + height) - 2;
-
-                            Console.CursorLeft--;
-                            Console.BackgroundColor = bgColor;
-                            Console.ForegroundColor = textColor;
-                            Console.Write("█");
-                        }
-                        else if (i == height - 1 && startLine + height < textFormatted.Length)
-                        {
-                            Console.BackgroundColor = bgColor;
-                            Console.ForegroundColor = textColor;
-                            Console.CursorLeft--;
-                            Console.Write("▼");
+                            foreach (char c in textFormatted[i + startLine])
+                            {
+                                Console.Write(c);
+                                Thread.Sleep(millisecDelay);
+                            }
                         }
                     }
 
-                    // Restores console colors in case they've been changed by line selection code
-                    Console.BackgroundColor = bgColor;
-                    Console.ForegroundColor = textColor;
+                    // This scrollbar code was hacked in at the very end. Would have preferred to have it more robustly implemented in the textbox code, but... time.
+                    // Has been improved slightly on 2022-11-01
+                    if (scrollBar)
+                    {
+                        Console.BackgroundColor = bgColor;
+                        Console.ForegroundColor = textColor;
+                        Console.CursorLeft = left + width - 1;
+
+                        if (i == 0 && startLine > 0)
+                            Console.Write("▲");
+                        else if (i == height - 1 && startLine + height < textFormatted.Length)
+                            Console.Write("▼");
+                        else if (i != scrollbarPosition)
+                            Console.Write("░");
+
+                        //if (i == scrollbarPosition || startLine == 0 || startLine == textFormatted.Length - height)
+                        //{
+                        //    if (startLine == 0)
+                        //        Console.CursorTop = top + 1;
+                        //    else if (startLine == textFormatted.Length - height)
+                        //        Console.CursorTop = (top + height) - 2;
+
+                        //    Console.Write("█");
+                        //}
+
+                        Console.BackgroundColor = bgColor;
+                        Console.ForegroundColor = textColor;
+                    }
+
+                    // If the renderer needs to take a second pass at the text for slow-rendering, set the necessary variables
+                    if (i >= height - 1 && fastPass && renderSlow)
+                    {
+                        fastPass = false;
+                        i = -1;
+                    }
                 }
             }
         }
@@ -291,9 +361,9 @@ namespace ConsoleGUI
         /// Creates a textbox and adds it to the textBoxes or textFields lists, depending on if it's set as interactable or not
         /// </summary>
         public static void CreateTextbox(int left, int top, int width, int height, string text = "",
-            ConsoleColor? bgColor = null, ConsoleColor? textColor = null, Interactable interactable = Interactable.No)
+            ConsoleColor? bgColor = null, ConsoleColor? textColor = null, Interactivity interactivity = Interactivity.None)
         {
-            if (textBoxes.Count < byte.MaxValue || interactable == Interactable.No)
+            if (textBoxes.Count < byte.MaxValue || interactivity == Interactivity.None)
             {
                 try
                 {
@@ -308,13 +378,11 @@ namespace ConsoleGUI
                     // Assigns default colors if none are provided
                     bgColor ??= _guiColor;
                     textColor ??= _guiTextColor;
-                    int selectedLine = (interactable == Interactable.Yes ? 0 : -1);
+                    int selectedLine = (interactivity == Interactivity.ScrollAndSelect ? 0 : -1);
 
                     TextBox textBox = new(left, top, width, height, selectedLine ,text, bgColor.Value, textColor.Value);
 
-                    textBox.Render();
-
-                    if (interactable == Interactable.No)
+                    if (interactivity == Interactivity.None)
                     {
                         textFields.Add(textBox);
                         return;
@@ -337,13 +405,20 @@ namespace ConsoleGUI
         {
             if (textBoxes.Count != 0)
             {
+                TextBox prevSelection = textBoxes[textBoxSelection];
+
                 textBoxSelection--;
 
                 if (textBoxSelection == byte.MaxValue)
                     textBoxSelection = (byte)(textBoxes.Count - 1);
 
-                foreach (TextBox textBox in textBoxes)
-                    textBox.Render();
+                prevSelection.Render();
+
+                if (prevSelection != textBoxes[textBoxSelection])
+                    textBoxes[textBoxSelection].Render();
+
+                //foreach (TextBox textBox in textBoxes)
+                //    textBox.Render();
             }
         }
 
@@ -354,13 +429,19 @@ namespace ConsoleGUI
         {
             if (textBoxes.Count != 0)
             {
+                TextBox prevSelection = textBoxes[textBoxSelection];
+
                 textBoxSelection++;
 
                 if (textBoxSelection >= textBoxes.Count)
                     textBoxSelection = 0;
 
-                foreach (TextBox textBox in textBoxes)
-                    textBox.Render();
+                prevSelection.Render();
+                if (prevSelection != textBoxes[textBoxSelection])
+                    textBoxes[textBoxSelection].Render();
+
+                //foreach (TextBox textBox in textBoxes)
+                //    textBox.Render();
             }
         }
 

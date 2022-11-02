@@ -146,7 +146,6 @@ namespace ConsoleGUI
                 if (startX + width > GetGUIWidth) throw new ArgumentOutOfRangeException(nameof(startX) + "', '" + nameof(width), "Too long.");
                 // ...or if the specified size is too small for the element to be drawn properly
                 if (width < 2 /*4*/) throw new ArgumentOutOfRangeException(nameof(width), "Length can't be less than 2.");
-                //if (evenWidth % 2 != 0) throw new ArgumentException("Length must be an even number.", nameof(evenWidth));
 
                 topY++; // Push GUI down from line 0
 

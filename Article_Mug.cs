@@ -35,8 +35,7 @@ namespace Articles
             return " " + _print.PadRight(printWidth + padding) +
                 $"{_type}".PadRight(typeWidth + padding) +
                 $"{_averageReviewScore:F1}".PadLeft(padding + extraPadding + scoreWidth) +
-                $"{_price:C2}".PadLeft(padding + priceWidth) +
-                " ░"; // These two characters at the end are a hack for the scrollbar. :(
+                $"{_price:C2}".PadLeft(padding + priceWidth);
         }
     }
 }

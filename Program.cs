@@ -71,9 +71,9 @@ namespace Digital_Storefront
             GUI.CreateTextbox(2, GUI.GetGUIHeight - 3, 30, 1, Data.copyright, ConsoleColor.DarkBlue, ConsoleColor.Yellow);
 
             GUI.CreateTextbox(2, 11, 62, 2, " MUGS\n" + Data.GetMugsHeaders(), ConsoleColor.DarkRed, ConsoleColor.White);
-            GUI.CreateTextbox(2, 13, 62, GUI.GetGUIHeight - 22, Data.GetMugsAsColumns(true, true), null, null, GUI.Interactable.Yes);
+            GUI.CreateTextbox(2, 13, 62, GUI.GetGUIHeight - 22, Data.GetMugsAsColumns(true, true), null, null, GUI.Interactivity.ScrollAndSelect);
             GUI.CreateTextbox(GUI.GetGUIWidth - 64, 11, 62, 2, " T-SHIRTS\n" + Data.GetTShirtsHeaders(), ConsoleColor.DarkRed, ConsoleColor.White);
-            GUI.CreateTextbox(GUI.GetGUIWidth - 64, 13, 62, GUI.GetGUIHeight - 22, Data.GetTShirtsAsColumns(true), null, null, GUI.Interactable.Yes);
+            GUI.CreateTextbox(GUI.GetGUIWidth - 64, 13, 62, GUI.GetGUIHeight - 22, Data.GetTShirtsAsColumns(true), null, null, GUI.Interactivity.ScrollOnly);
         }
     }
 }
