@@ -76,14 +76,14 @@ namespace ConsoleGUI
 
             public void AddText(string text, byte linebreaks = 1, bool addToTop = false, bool autoScroll = false, bool renderSlow = false, int milliSecDelay = 10)
             {
-                string linebreakChars = string.Empty;
+                //string linebreakChars = string.Empty.PadRight(linebreaks, '\n');
 
-                for (int i = 0; i < linebreaks; i++)
-                    linebreakChars += "\n";
+                //for (int i = 0; i < linebreaks; i++)
+                //    linebreakChars += "\n";
 
-                text = addToTop ? text + linebreakChars : linebreakChars + text;
+                text = addToTop ? text.PadRight(text.Length + linebreaks, '\n') : text.PadLeft(text.Length + linebreaks, '\n');
 
-                string[] newTextFormatted = FormatText(text, width - (scrollBar ? 1 : 0));
+                string[] newTextFormatted = FormatText(text, width - (scrollBar ? 1 : 0), false);
 
                 if (!scrollBar && newTextFormatted.Length + textFormatted.Length > height && height >= 3)
                 {
@@ -121,22 +121,23 @@ namespace ConsoleGUI
             /// <summary>
             /// Handles formatting of a text string to fit within a block of the specified width.
             /// </summary>
-            private static string[] FormatText(string text, int width)
+            private static string[] FormatText(string text, int width, bool removeTrailingLinebreaks = true)
             {
                 if (string.IsNullOrWhiteSpace(text))
                     return new string[] { "".PadRight(width) };
 
                 text = text.Replace('\t', ' ');
 
-                for (int i = text.Length-1; i >= 0; i--)    // Removes any trailing linebreaks
-                {
-                    if (text[i] != '\r' && text[i] != '\n')
+                if (removeTrailingLinebreaks)
+                    for (int i = text.Length-1; i >= 0; i--)    // Removes any trailing linebreaks
                     {
-                        text = text[..(i+1)];
-                        break;
-                    }
+                        if (text[i] != '\r' && text[i] != '\n')
+                        {
+                            text = text[..(i+1)];
+                            break;
+                        }
 
-                }
+                    }
                 
                 Queue<string> lines = new();
 
@@ -158,13 +159,13 @@ namespace ConsoleGUI
                         if (text[i] == '\r' && text[i + 1] == '\n')     // If carriage return followed by newline, remove the latter
                             text = text.Remove(i + 1, 1);
 
-                        lines.Enqueue(text[..i].PadRight(maxLength));     // Put the new line in the queue
+                        lines.Enqueue(text[..i].PadRight(maxLength));   // Put the new line in the queue
                         text = text[(i + 1)..];                         // Remove that line from the full text
                                                                         
-                        if (text.Length > maxLength)                      // If there is more than one more line of text, start over...
+                        if (text.Length > maxLength)                    // If there is more than one more line of text, start over...
                             return;
 
-                        i = 0;                                              // ...and if there isn't, restart the for-loop to look for more linebreaks
+                        i = -1;                                         // ...and if there isn't, restart the for-loop to look for more linebreaks
                     }
                 }
 
@@ -307,14 +308,26 @@ namespace ConsoleGUI
                         : (startLine == textFormatted.Length - height ? height - 2
                         : 1 + (int)((height - 2) * scrollPercentage));
 
+                    Console.BackgroundColor = bgColor;
+                    Console.ForegroundColor = textColor;
                     Console.SetCursorPosition(left + width - 1, top + scrollbarPosition);
                     Console.Write("█");
                 }
 
                 for (int i = 0; i < height; i++)
                 {
+                    // If the renderer has surpassed the final line in the text...
                     if (i + startLine >= textFormatted.Length)
-                        break;
+                    {
+                        if (fastPass && renderSlow)     // ...proceed with the slow pass if applicable...
+                        {
+                            fastPass = false;
+                            i = -1;
+                            continue;
+                        }
+                        else                            // ...and stop the rendering process if not
+                            break;
+                    }
 
                     // This handles showing what line you have marked
                     if (GUI.textBoxes?.Count != 0 && i == selectedLine) {
@@ -331,7 +344,7 @@ namespace ConsoleGUI
                     if (fastPass)
                     {
                         if (renderAllSlow || (renderSlow && i + startLine >= slowStartLine && i + startLine <= slowEndLine))
-                            Console.Write(String.Empty.PadRight(width));
+                            Console.Write(String.Empty.PadRight(width - (scrollBar ? 1 : 0)));
                         else
                             Console.Write(textFormatted[i + startLine]);
                     }
@@ -514,7 +527,7 @@ namespace ConsoleGUI
                     case ConsoleKey.Insert:
                         if (textBoxes.Count > 0)
                         {
-                            textBoxes[textBoxSelection].AddText("Here comes a new challenger!", 0);
+                            textBoxes[textBoxSelection].AddText("Here comes a new challenger!", 2, true, false, true);
                         }
                         break;
                 }
