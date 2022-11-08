@@ -76,29 +76,24 @@ namespace ConsoleGUI
 
             public void AddText(string text, byte linebreaks = 1, bool addToTop = false, bool autoScroll = false, bool renderSlow = false, int milliSecDelay = 10)
             {
-                //string linebreakChars = string.Empty.PadRight(linebreaks, '\n');
-
-                //for (int i = 0; i < linebreaks; i++)
-                //    linebreakChars += "\n";
-
                 text = addToTop ? text.PadRight(text.Length + linebreaks, '\n') : text.PadLeft(text.Length + linebreaks, '\n');
 
                 string[] newTextFormatted = FormatText(text, width - (scrollBar ? 1 : 0), false);
 
                 if (!scrollBar && newTextFormatted.Length + textFormatted.Length > height && height >= 3)
                 {
-                    newTextFormatted = FormatText(text, width - 1);
-                    textFormatted = FormatText(text, width - 1);
+                    newTextFormatted = FormatText(text, width - 1, false);
+                    textFormatted = FormatText(textFull, width - 1, false);
+                    scrollBar = true;
                 }
 
                 int newStartLine = addToTop ? 0 : textFormatted.Length;
                 int newEndLine = addToTop ? newTextFormatted.Length - 1 : textFormatted.Length + newTextFormatted.Length + 1;
 
+                textFull = addToTop ? text + "\n" + textFull : textFull + "\n" + text;
                 textFormatted = addToTop ? newTextFormatted.Concat(textFormatted).ToArray() : textFormatted.Concat(newTextFormatted).ToArray();
 
                 Render(autoScroll, !addToTop, renderSlow, milliSecDelay, newStartLine, newEndLine);
-
-                // TODO: Thoroughly test this code to make sure it works properly.
             }
 
             public TextBox(int left, int top, int width, int height, int selectedLine, string text = "", ConsoleColor bgColor = _guiColor, ConsoleColor textColor = _guiTextColor, ConsoleColor inactiveColor = _guiInactiveColor)
@@ -128,73 +123,67 @@ namespace ConsoleGUI
 
                 text = text.Replace('\t', ' ');
 
+                text = text.Replace("\r\n", "\n");
+
                 if (removeTrailingLinebreaks)
-                    for (int i = text.Length-1; i >= 0; i--)    // Removes any trailing linebreaks
-                    {
-                        if (text[i] != '\r' && text[i] != '\n')
-                        {
-                            text = text[..(i+1)];
-                            break;
-                        }
+                    text = text.TrimEnd('\n');
 
-                    }
-                
-                Queue<string> lines = new();
+                string[] textLines = text.Split(new char[] { '\n', '\r' });
 
-                while (text != string.Empty)                         // Split the text into lines that fit into the textbox
-                    SplitText(lines, ref text, width);
+                SplitLinesByLength(ref textLines, width);
                                 
-                return lines.ToArray();
+                return textLines;
             }
 
             /// <summary>
             /// Identifies at what point to split a line in order to fit it into a textbox.
             /// </summary>
-            private static void SplitText(Queue<string> lines, ref string text, int maxLength)
+            private static void SplitLinesByLength(ref string[] lines, int maxLength)
             {
-                for (int i = 0; i <= maxLength && i < text.Length; i++)
+                Queue<string> newLines = new();
+
+                for (int lineIndex = 0; lineIndex < lines.Length; lineIndex++)
                 {
-                    if (text[i] == '\n' || text[i] == '\r')             // If there's already a linebreak on the current row, split the string there
+                    // If a string fits the textbox width, just pad and enqueue it
+                    if (lines[lineIndex].Length <= maxLength)
                     {
-                        if (text[i] == '\r' && text[i + 1] == '\n')     // If carriage return followed by newline, remove the latter
-                            text = text.Remove(i + 1, 1);
-
-                        lines.Enqueue(text[..i].PadRight(maxLength));   // Put the new line in the queue
-                        text = text[(i + 1)..];                         // Remove that line from the full text
-                                                                        
-                        if (text.Length > maxLength)                    // If there is more than one more line of text, start over...
-                            return;
-
-                        i = -1;                                         // ...and if there isn't, restart the for-loop to look for more linebreaks
+                        newLines.Enqueue(lines[lineIndex].PadRight(maxLength));
+                        continue;
                     }
-                }
 
-                // If the remaining text is longer than the textbox and doesn't have any linebreaks, split the string at a dash or blankspace
-                if (text.Length > maxLength)
-                {
+                    // Otherwise, find a dash or blankspace to split it at
                     for (int i = maxLength; i >= 0; i--)
                     {
-                        if (i != maxLength && text[i] == '-')
+                        if (i != maxLength && lines[lineIndex][i] == '-')
                         {
-                            lines.Enqueue(text[..(i + 1)].PadRight(maxLength));
-                            text = text[(i + 1)..];
-                            return;
+                            newLines.Enqueue(lines[lineIndex][..(i + 1)].PadRight(maxLength));
+                            lines[lineIndex] = lines[lineIndex][(i + 1)..];
+                            lineIndex--;
+                            break;
                         }
 
-                        if (text[i] == ' ')
+                        if (lines[lineIndex][i] == ' ')
                         {
-                            lines.Enqueue(text[..i].PadRight(maxLength));
-                            text = text[(i + 1)..];
-                            return;
+                            newLines.Enqueue(lines[lineIndex][..i].PadRight(maxLength));
+                            lines[lineIndex] = lines[lineIndex][(i + 1)..];
+                            lineIndex--;
+                            break;
+                        }
+
+                        // If no split point can be found, just split it at the final character
+                        if (i == 0)
+                        {
+                            newLines.Enqueue(lines[lineIndex][..maxLength]);
+                            lines[lineIndex] = lines[lineIndex][maxLength..];
+                            lineIndex--;
+                            break;
                         }
                     }
                 }
 
-                lines.Enqueue(text.PadRight(maxLength));  // If the remaining, linebreak-free text fits in the textbox, add it to the queue
-
-                text = string.Empty;
+                lines = newLines.ToArray();
             }
-
+                        
             /// <summary>
             /// Moves the selection one line up in the current textbox. Scrolls up if necessary.
             /// </summary>
@@ -314,10 +303,10 @@ namespace ConsoleGUI
                     Console.Write("█");
                 }
 
-                for (int i = 0; i < height; i++)
+                for (int i = 0; i <= height; i++)
                 {
-                    // If the renderer has surpassed the final line in the text...
-                    if (i + startLine >= textFormatted.Length)
+                    // If the renderer has surpassed the final line in either the text or the box...
+                    if (i + startLine >= textFormatted.Length || i >= height)
                     {
                         if (fastPass && renderSlow)     // ...proceed with the slow pass if applicable...
                         {
@@ -325,7 +314,7 @@ namespace ConsoleGUI
                             i = -1;
                             continue;
                         }
-                        else                            // ...and stop the rendering process if not
+                        else                            // ...or stop the rendering process if not
                             break;
                     }
 
@@ -352,12 +341,16 @@ namespace ConsoleGUI
                     {
                         if (renderAllSlow || (i + startLine >= slowStartLine && i + startLine <= slowEndLine))
                         {
-                            foreach (char c in textFormatted[i + startLine])
+                            string trimmedText = textFormatted[i + startLine].TrimEnd();
+
+                            foreach (char c in trimmedText)
                             {
                                 Console.Write(c);
                                 Thread.Sleep(millisecDelay);
                             }
                         }
+                        else if (i + startLine > slowEndLine)
+                            break;
                     }
 
                     // This scrollbar code was hacked in at the very end. Would have preferred to have it more robustly implemented in the textbox code, but... time.
@@ -377,11 +370,11 @@ namespace ConsoleGUI
                     }
 
                     // If the renderer needs to take a second pass at the text for slow-rendering, set the necessary variables
-                    if (i >= height - 1 && fastPass && renderSlow)
-                    {
-                        fastPass = false;
-                        i = -1;
-                    }
+                    //if (i >= height - 1 && fastPass && renderSlow)
+                    //{
+                    //    fastPass = false;
+                    //    i = -1;
+                    //}
                 }
 
                 Console.SetCursorPosition(0, 0);
