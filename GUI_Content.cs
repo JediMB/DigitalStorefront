@@ -123,12 +123,10 @@ namespace ConsoleGUI
 
                 text = text.Replace('\t', ' ');
 
-                text = text.Replace("\r\n", "\n");
-
                 if (removeTrailingLinebreaks)
-                    text = text.TrimEnd('\n');
+                    text = text.TrimEnd('\n', '\r');
 
-                string[] textLines = text.Split(new char[] { '\n', '\r' });
+                string[] textLines = text.Split(new string[] { "\r\n", "\n", "\r" }, StringSplitOptions.None); // Splits the text at linebreak characters
 
                 SplitLinesByLength(ref textLines, width);
                                 
@@ -151,7 +149,7 @@ namespace ConsoleGUI
                         continue;
                     }
 
-                    // Otherwise, find a dash or blankspace to split it at
+                    // Otherwise, find an appropriate character to split it at
                     for (int i = maxLength; i >= 0; i--)
                     {
                         if (i != maxLength && lines[lineIndex][i] == '-')
@@ -520,7 +518,7 @@ namespace ConsoleGUI
                     case ConsoleKey.Insert:
                         if (textBoxes.Count > 0)
                         {
-                            textBoxes[textBoxSelection].AddText("Here comes a new challenger!", 2, true, false, true);
+                            textBoxes[textBoxSelection].AddText("Here co\r\nmes a new challenger!", 2, true, false, true);
                         }
                         break;
                 }
