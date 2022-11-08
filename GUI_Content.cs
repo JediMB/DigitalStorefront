@@ -61,7 +61,7 @@ namespace ConsoleGUI
                         }
 
                         for (int line = 0; line < textFormatted.Length; line++)
-                            textFormatted[line] = " ".PadRight(width);
+                            textFormatted[line] = string.Empty.PadRight(width);
 
                         Render(true, false);
                     }
@@ -74,6 +74,9 @@ namespace ConsoleGUI
                 get => textFull;
             }
 
+            /// <summary>
+            /// Adds more text to a textbox, with options for linebreaks, padding, and slow rendering of the new text
+            /// </summary>
             public void AddText(string text, byte linebreaks = 1, bool addToTop = false, bool autoScroll = false, bool renderSlow = false, int milliSecDelay = 10)
             {
                 text = addToTop ? text.PadRight(text.Length + linebreaks, '\n') : text.PadLeft(text.Length + linebreaks, '\n');
@@ -518,7 +521,7 @@ namespace ConsoleGUI
                     case ConsoleKey.Insert:
                         if (textBoxes.Count > 0)
                         {
-                            textBoxes[textBoxSelection].AddText("Here co\r\nmes a new challenger!", 2, true, false, true);
+                            textBoxes[textBoxSelection].AddText("Here comes a new challenger!", 2, true, false, true);
                         }
                         break;
                 }
