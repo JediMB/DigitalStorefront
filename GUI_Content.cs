@@ -77,15 +77,15 @@ namespace ConsoleGUI
             /// <summary>
             /// Adds more text to a textbox, with options for linebreaks, padding, and slow rendering of the new text
             /// </summary>
-            public void AddText(string text, byte linebreaks = 1, bool addToTop = false, bool autoScroll = false, bool renderSlow = false, int milliSecDelay = 10)
+            public void AddText(string newText, byte linebreaks = 1, bool addToTop = false, bool autoScroll = false, bool renderSlow = false, int milliSecDelay = 10)
             {
-                text = addToTop ? text.PadRight(text.Length + linebreaks, '\n') : text.PadLeft(text.Length + linebreaks, '\n');
+                newText = addToTop ? newText.PadRight(newText.Length + linebreaks, '\n') : newText.PadLeft(newText.Length + linebreaks, '\n');
 
-                string[] newTextFormatted = FormatText(text, width - (scrollBar ? 1 : 0), false);
+                string[] newTextFormatted = FormatText(newText, width - (scrollBar ? 1 : 0), false);
 
                 if (!scrollBar && newTextFormatted.Length + textFormatted.Length > height && height >= 3)
                 {
-                    newTextFormatted = FormatText(text, width - 1, false);
+                    newTextFormatted = FormatText(newText, width - 1, false);
                     textFormatted = FormatText(textFull, width - 1, false);
                     scrollBar = true;
                 }
@@ -93,8 +93,16 @@ namespace ConsoleGUI
                 int newStartLine = addToTop ? 0 : textFormatted.Length;
                 int newEndLine = addToTop ? newTextFormatted.Length - 1 : textFormatted.Length + newTextFormatted.Length + 1;
 
-                textFull = addToTop ? text + "\n" + textFull : textFull + "\n" + text;
-                textFormatted = addToTop ? newTextFormatted.Concat(textFormatted).ToArray() : textFormatted.Concat(newTextFormatted).ToArray();
+                if (textFull == string.Empty)
+                {
+                    textFull = newText;
+                    textFormatted = newTextFormatted;
+                }
+                else
+                {
+                    textFull = addToTop ? newText + "\n" + textFull : textFull + "\n" + newText;
+                    textFormatted = addToTop ? newTextFormatted.Concat(textFormatted).ToArray() : textFormatted.Concat(newTextFormatted).ToArray();
+                }
 
                 Render(autoScroll, !addToTop, renderSlow, milliSecDelay, newStartLine, newEndLine);
             }
